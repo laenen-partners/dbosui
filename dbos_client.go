@@ -3,34 +3,57 @@ package dbosui
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/dbos-inc/dbos-transact-golang/dbos"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// DBOSClient connects to a DBOS system database using the official DBOS Go client.
+// DBOSClient connects to a DBOS system database using the official DBOS Go client
+// and a direct pgx pool for queries the client doesn't support (events, name search).
 type DBOSClient struct {
 	client dbos.Client
+	pool   *pgxpool.Pool
+	schema string
 }
 
 // NewDBOSClient creates a client that connects to the DBOS system database
 // at the given Postgres URL.
 func NewDBOSClient(ctx context.Context, databaseURL string) (*DBOSClient, error) {
+	pool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("dbosui: connect to database: %w", err)
+	}
+
 	client, err := dbos.NewClient(ctx, dbos.ClientConfig{
-		DatabaseURL: databaseURL,
+		SystemDBPool: pool,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("dbosui: connect to DBOS database: %w", err)
+		pool.Close()
+		return nil, fmt.Errorf("dbosui: create DBOS client: %w", err)
 	}
-	return &DBOSClient{client: client}, nil
+
+	return &DBOSClient{
+		client: client,
+		pool:   pool,
+		schema: "dbos",
+	}, nil
 }
 
 // Shutdown closes the database connection.
 func (c *DBOSClient) Shutdown(timeout time.Duration) {
 	c.client.Shutdown(timeout)
+	c.pool.Close()
 }
 
 func (c *DBOSClient) ListWorkflows(ctx context.Context, filter ListFilter) (*ListResult, error) {
+	// If there's a name search, query the DB directly with ILIKE for substring matching.
+	// The DBOS client's WithName does exact match only.
+	if filter.Name != "" {
+		return c.listWorkflowsByName(ctx, filter)
+	}
+
 	var opts []dbos.ListWorkflowsOption
 
 	if len(filter.Status) > 0 {
@@ -39,9 +62,6 @@ func (c *DBOSClient) ListWorkflows(ctx context.Context, filter ListFilter) (*Lis
 			statuses[i] = dbos.WorkflowStatusType(s)
 		}
 		opts = append(opts, dbos.WithStatus(statuses))
-	}
-	if filter.Name != "" {
-		opts = append(opts, dbos.WithName(filter.Name))
 	}
 	if filter.User != "" {
 		opts = append(opts, dbos.WithUser(filter.User))
@@ -72,6 +92,85 @@ func (c *DBOSClient) ListWorkflows(ctx context.Context, filter ListFilter) (*Lis
 		result.Workflows[i] = fromDBOS(wf)
 	}
 	return result, nil
+}
+
+// listWorkflowsByName queries the DB directly with ILIKE for substring name search.
+func (c *DBOSClient) listWorkflowsByName(ctx context.Context, filter ListFilter) (*ListResult, error) {
+	args := []any{"%" + strings.ToLower(filter.Name) + "%"}
+	where := "WHERE LOWER(name) LIKE $1"
+	argIdx := 2
+
+	if len(filter.Status) > 0 {
+		placeholders := make([]string, len(filter.Status))
+		for i, s := range filter.Status {
+			placeholders[i] = fmt.Sprintf("$%d", argIdx)
+			args = append(args, string(s))
+			argIdx++
+		}
+		where += fmt.Sprintf(" AND status IN (%s)", strings.Join(placeholders, ","))
+	}
+
+	// Count total matching.
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM %s.workflow_status %s", c.schema, where)
+	var total int
+	if err := c.pool.QueryRow(ctx, countQuery, args...).Scan(&total); err != nil {
+		return nil, fmt.Errorf("dbosui: count workflows: %w", err)
+	}
+
+	// Fetch page.
+	order := "ASC"
+	if filter.SortDesc {
+		order = "DESC"
+	}
+	limit := filter.Limit
+	if limit <= 0 {
+		limit = 25
+	}
+
+	dataQuery := fmt.Sprintf(
+		`SELECT workflow_uuid, status, name, COALESCE(authenticated_user,''), executor_id,
+		        created_at, updated_at, COALESCE(application_version,''), COALESCE(application_id,''),
+		        COALESCE(recovery_attempts,0), COALESCE(queue_name,''),
+		        COALESCE(output,''), COALESCE(error,''), COALESCE(inputs,'')
+		 FROM %s.workflow_status %s
+		 ORDER BY created_at %s
+		 LIMIT $%d OFFSET $%d`,
+		c.schema, where, order, argIdx, argIdx+1,
+	)
+	args = append(args, limit, filter.Offset)
+
+	rows, err := c.pool.Query(ctx, dataQuery, args...)
+	if err != nil {
+		return nil, fmt.Errorf("dbosui: query workflows: %w", err)
+	}
+	defer rows.Close()
+
+	var workflows []WorkflowInfo
+	for rows.Next() {
+		var wf WorkflowInfo
+		var createdAtMs, updatedAtMs int64
+		var output, errStr, inputs string
+		if err := rows.Scan(
+			&wf.ID, &wf.Status, &wf.Name, &wf.AuthenticatedUser, &wf.ExecutorID,
+			&createdAtMs, &updatedAtMs, &wf.ApplicationVersion, &wf.ApplicationID,
+			&wf.Attempts, &wf.QueueName,
+			&output, &errStr, &inputs,
+		); err != nil {
+			return nil, fmt.Errorf("dbosui: scan workflow: %w", err)
+		}
+		wf.CreatedAt = time.UnixMilli(createdAtMs)
+		wf.UpdatedAt = time.UnixMilli(updatedAtMs)
+		wf.Error = errStr
+		if output != "" {
+			wf.Output = output
+		}
+		if inputs != "" {
+			wf.Input = inputs
+		}
+		workflows = append(workflows, wf)
+	}
+
+	return &ListResult{Workflows: workflows, Total: total}, nil
 }
 
 func (c *DBOSClient) GetWorkflow(ctx context.Context, id string) (*WorkflowInfo, error) {
@@ -105,6 +204,29 @@ func (c *DBOSClient) GetWorkflowSteps(ctx context.Context, id string) ([]StepInf
 		}
 	}
 	return result, nil
+}
+
+// GetWorkflowEvents queries the workflow_events table for data set via dbos.SetEvent.
+func (c *DBOSClient) GetWorkflowEvents(ctx context.Context, id string) ([]EventInfo, error) {
+	query := fmt.Sprintf(
+		"SELECT key, value FROM %s.workflow_events WHERE workflow_uuid = $1 ORDER BY key",
+		c.schema,
+	)
+	rows, err := c.pool.Query(ctx, query, id)
+	if err != nil {
+		return nil, fmt.Errorf("dbosui: query workflow events: %w", err)
+	}
+	defer rows.Close()
+
+	var events []EventInfo
+	for rows.Next() {
+		var e EventInfo
+		if err := rows.Scan(&e.Key, &e.Value); err != nil {
+			return nil, fmt.Errorf("dbosui: scan event: %w", err)
+		}
+		events = append(events, e)
+	}
+	return events, nil
 }
 
 func (c *DBOSClient) CancelWorkflow(_ context.Context, id string) error {

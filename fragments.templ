@@ -112,7 +112,7 @@ templ statusBadge(status WorkflowStatus) {
 	}
 }
 
-templ DetailContent(wf *WorkflowInfo, steps []StepInfo) {
+templ DetailContent(wf *WorkflowInfo, steps []StepInfo, events []EventInfo) {
 	{{ wxctx := dsx.FromContext(ctx) }}
 	<div class="space-y-6">
 		<div>
@@ -178,6 +178,13 @@ templ DetailContent(wf *WorkflowInfo, steps []StepInfo) {
 				<pre class="bg-base-200 p-3 rounded-lg text-xs overflow-auto max-h-48"><code>{ prettyJSON(wf.Output) }</code></pre>
 			</div>
 		}
+		// Events (data set via dbos.SetEvent)
+		if len(events) > 0 {
+			<div>
+				<h3 class="font-semibold mb-2">Events</h3>
+				@EventsTable(events)
+			</div>
+		}
 		// Steps
 		if len(steps) > 0 {
 			<div>
@@ -240,6 +247,29 @@ templ StepsTable(steps []StepInfo) {
 							} else if step.Output != nil {
 								<code>{ truncateJSON(step.Output) }</code>
 							}
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+}
+
+templ EventsTable(events []EventInfo) {
+	<div class="overflow-x-auto">
+		<table class="table table-xs">
+			<thead>
+				<tr>
+					<th>Key</th>
+					<th>Value</th>
+				</tr>
+			</thead>
+			<tbody>
+				for _, event := range events {
+					<tr>
+						<td class="font-mono text-xs font-medium">{ event.Key }</td>
+						<td class="text-xs">
+							<pre class="bg-base-200 px-2 py-1 rounded text-xs max-w-xs overflow-auto">{ event.Value }</pre>
 						</td>
 					</tr>
 				}

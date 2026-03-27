@@ -88,9 +88,10 @@ func (h *workflowHandlers) detail() http.HandlerFunc {
 		}
 
 		steps, _ := h.client.GetWorkflowSteps(r.Context(), id)
+		events, _ := h.client.GetWorkflowEvents(r.Context(), id)
 
 		sse := datastar.NewSSE(w, r)
-		_ = ds.Send.Drawer(sse, DetailContent(wf, steps))
+		_ = ds.Send.Drawer(sse, DetailContent(wf, steps, events))
 	}
 }
 

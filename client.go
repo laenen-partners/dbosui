@@ -53,6 +53,12 @@ type StepInfo struct {
 	Error  string
 }
 
+// EventInfo holds a key-value pair set via dbos.SetEvent.
+type EventInfo struct {
+	Key   string
+	Value string
+}
+
 // ListFilter configures workflow listing and filtering.
 type ListFilter struct {
 	Status   []WorkflowStatus
@@ -85,6 +91,7 @@ type Client interface {
 	ListWorkflows(ctx context.Context, filter ListFilter) (*ListResult, error)
 	GetWorkflow(ctx context.Context, id string) (*WorkflowInfo, error)
 	GetWorkflowSteps(ctx context.Context, id string) ([]StepInfo, error)
+	GetWorkflowEvents(ctx context.Context, id string) ([]EventInfo, error)
 	CancelWorkflow(ctx context.Context, id string) error
 	ResumeWorkflow(ctx context.Context, id string) error
 }
@@ -219,6 +226,18 @@ func (m *mockClient) GetWorkflowSteps(_ context.Context, id string) ([]StepInfo,
 			steps = append(steps, StepInfo{StepID: 3, Name: "finalize", Output: map[string]any{"status": "complete"}})
 		}
 		return steps, nil
+	}
+	return nil, fmt.Errorf("workflow %q not found", id)
+}
+
+func (m *mockClient) GetWorkflowEvents(_ context.Context, id string) ([]EventInfo, error) {
+	for _, wf := range m.workflows {
+		if wf.ID == id {
+			return []EventInfo{
+				{Key: "status", Value: `"processing"`},
+				{Key: "progress", Value: `{"percent": 75, "step": "validation"}`},
+			}, nil
+		}
 	}
 	return nil, fmt.Errorf("workflow %q not found", id)
 }
