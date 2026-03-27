@@ -206,6 +206,7 @@ func workflowsContent() templ.Component {
 		ctx = templ.ClearChildren(ctx)
 		wxctx := dsx.FromContext(ctx)
 		signals := ds.NewSignals("wf_filter", filterSignals{})
+		refreshExpr := "clearInterval(window._ar); if (" + signals.Signal("refresh") + " > 0) { window._ar = setInterval(function(){ document.getElementById('auto-refresh-btn').click() }, " + signals.Signal("refresh") + ") }"
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"space-y-6\" data-signals=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -213,13 +214,37 @@ func workflowsContent() templ.Component {
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(signals.DataSignals)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `page.templ`, Line: 48, Col: 58}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `page.templ`, Line: 49, Col: 58}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\"><div id=\"wf-stats\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\"><div style=\"display:none\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templ.RenderAttributes(ctx, templ_7745c5c3_Buffer, ds.Effect(refreshExpr))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "></div><button id=\"auto-refresh-btn\" style=\"display:none\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templ.RenderAttributes(ctx, templ_7745c5c3_Buffer, ds.OnClick(ds.Get(wxctx.APIPath("/workflows/list"))+"; "+ds.Get(wxctx.APIPath("/workflows/stats"))))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "></button><div")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templ.RenderAttributes(ctx, templ_7745c5c3_Buffer, ds.Show("!"+signals.Signal("expanded_id")))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "><div id=\"wf-stats\" class=\"mb-6\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -227,7 +252,7 @@ func workflowsContent() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "><div class=\"flex gap-4\"><div class=\"skeleton h-20 w-full\"></div><div class=\"skeleton h-20 w-full\"></div><div class=\"skeleton h-20 w-full\"></div><div class=\"skeleton h-20 w-full\"></div></div></div><div class=\"flex items-center gap-3 flex-wrap\"><select class=\"select select-bordered select-sm\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "><div class=\"flex gap-4\"><div class=\"skeleton h-20 w-full\"></div><div class=\"skeleton h-20 w-full\"></div><div class=\"skeleton h-20 w-full\"></div><div class=\"skeleton h-20 w-full\"></div></div></div><div class=\"flex items-center gap-3 flex-wrap mb-6\"><select class=\"select select-bordered select-sm\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -239,7 +264,7 @@ func workflowsContent() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "><option value=\"\">All Statuses</option> <option value=\"PENDING\">Pending</option> <option value=\"ENQUEUED\">Enqueued</option> <option value=\"SUCCESS\">Success</option> <option value=\"ERROR\">Error</option> <option value=\"CANCELLED\">Cancelled</option></select> <input type=\"text\" class=\"input input-bordered input-sm w-64\" placeholder=\"Search by name...\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "><option value=\"\">All Statuses</option> <option value=\"PENDING\">Pending</option> <option value=\"ENQUEUED\">Enqueued</option> <option value=\"SUCCESS\">Success</option> <option value=\"ERROR\">Error</option> <option value=\"CANCELLED\">Cancelled</option></select> <input type=\"text\" class=\"input input-bordered input-sm w-64\" placeholder=\"Search by name...\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -251,7 +276,15 @@ func workflowsContent() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "><div class=\"flex-1\"></div><button class=\"btn btn-ghost btn-sm\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "><div class=\"flex-1\"></div><select class=\"select select-bordered select-sm\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templ.RenderAttributes(ctx, templ_7745c5c3_Buffer, ds.Bind("wf_filter", "refresh"))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "><option value=\"0\">Auto-refresh: Off</option> <option value=\"1000\">1s</option> <option value=\"5000\">5s</option> <option value=\"10000\">10s</option> <option value=\"30000\">30s</option> <option value=\"60000\">1min</option></select> <button class=\"btn btn-ghost btn-sm\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -259,7 +292,7 @@ func workflowsContent() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, ">Refresh</button></div><div class=\"overflow-x-auto rounded-lg border border-base-300\"><table class=\"table table-zebra\"><thead><tr class=\"bg-base-200\"><th>ID</th><th>Name</th><th>Status</th><th>User</th><th>Created</th><th>Attempts</th><th class=\"w-20\"></th></tr></thead> <tbody id=\"wf-table-body\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, ">Refresh</button></div><div class=\"overflow-x-auto rounded-lg border border-base-300\"><table class=\"table table-zebra\"><thead><tr class=\"bg-base-200\"><th>ID</th><th>Name</th><th>Status</th><th>User</th><th>Created</th><th>Attempts</th><th class=\"w-20\"></th></tr></thead> <tbody id=\"wf-table-body\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -267,7 +300,15 @@ func workflowsContent() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "><tr><td colspan=\"7\" class=\"text-center py-8 text-base-content/50\"><span class=\"loading loading-spinner\"></span></td></tr></tbody></table></div><div id=\"wf-pagination\" class=\"flex justify-center\"></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "><tr><td colspan=\"7\" class=\"text-center py-8 text-base-content/50\"><span class=\"loading loading-spinner\"></span></td></tr></tbody></table></div><div id=\"wf-pagination\" class=\"flex justify-center mt-4\"></div></div><div id=\"wf-detail-full\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templ.RenderAttributes(ctx, templ_7745c5c3_Buffer, ds.Show(signals.Signal("expanded_id")))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

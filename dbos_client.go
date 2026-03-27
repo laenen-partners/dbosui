@@ -221,9 +221,11 @@ func (c *DBOSClient) GetWorkflowEvents(ctx context.Context, id string) ([]EventI
 	var events []EventInfo
 	for rows.Next() {
 		var e EventInfo
-		if err := rows.Scan(&e.Key, &e.Value); err != nil {
+		var rawValue string
+		if err := rows.Scan(&e.Key, &rawValue); err != nil {
 			return nil, fmt.Errorf("dbosui: scan event: %w", err)
 		}
+		e.Value = decodeDBOSValue(rawValue)
 		events = append(events, e)
 	}
 	return events, nil

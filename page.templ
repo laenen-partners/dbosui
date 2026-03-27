@@ -45,75 +45,101 @@ templ adminHead() {
 templ workflowsContent() {
 	{{ wxctx := dsx.FromContext(ctx) }}
 	{{ signals := ds.NewSignals("wf_filter", filterSignals{}) }}
+	{{ refreshExpr := "clearInterval(window._ar); if (" + signals.Signal("refresh") + " > 0) { window._ar = setInterval(function(){ document.getElementById('auto-refresh-btn').click() }, " + signals.Signal("refresh") + ") }" }}
 	<div class="space-y-6" data-signals={ signals.DataSignals }>
-		// Stats
-		<div
-			id="wf-stats"
-			{ ds.Init(ds.GetOnce(wxctx.APIPath("/workflows/stats")))... }
-		>
-			<div class="flex gap-4">
-				<div class="skeleton h-20 w-full"></div>
-				<div class="skeleton h-20 w-full"></div>
-				<div class="skeleton h-20 w-full"></div>
-				<div class="skeleton h-20 w-full"></div>
+		// Auto-refresh effect: sets up/clears interval when refresh signal changes
+		<div style="display:none" { ds.Effect(refreshExpr)... }></div>
+		<button
+			id="auto-refresh-btn"
+			style="display:none"
+			{ ds.OnClick(ds.Get(wxctx.APIPath("/workflows/list")) + "; " + ds.Get(wxctx.APIPath("/workflows/stats")))... }
+		></button>
+		// List view (hidden when a workflow is expanded to full page)
+		<div { ds.Show("!" + signals.Signal("expanded_id"))... }>
+			// Stats
+			<div
+				id="wf-stats"
+				class="mb-6"
+				{ ds.Init(ds.GetOnce(wxctx.APIPath("/workflows/stats")))... }
+			>
+				<div class="flex gap-4">
+					<div class="skeleton h-20 w-full"></div>
+					<div class="skeleton h-20 w-full"></div>
+					<div class="skeleton h-20 w-full"></div>
+					<div class="skeleton h-20 w-full"></div>
+				</div>
 			</div>
-		</div>
-		// Filters
-		<div class="flex items-center gap-3 flex-wrap">
-			<select
-				class="select select-bordered select-sm"
-				{ ds.Bind("wf_filter", "status")... }
-				{ ds.On("change", signals.Set("page", "0") + "; " + ds.Get(wxctx.APIPath("/workflows/list")))... }
-			>
-				<option value="">All Statuses</option>
-				<option value="PENDING">Pending</option>
-				<option value="ENQUEUED">Enqueued</option>
-				<option value="SUCCESS">Success</option>
-				<option value="ERROR">Error</option>
-				<option value="CANCELLED">Cancelled</option>
-			</select>
-			<input
-				type="text"
-				class="input input-bordered input-sm w-64"
-				placeholder="Search by name..."
-				{ ds.Bind("wf_filter", "name")... }
-				{ ds.On("input.debounce_300ms", signals.Set("page", "0") + "; " + ds.Get(wxctx.APIPath("/workflows/list")))... }
-			/>
-			<div class="flex-1"></div>
-			<button
-				class="btn btn-ghost btn-sm"
-				{ ds.OnClick(ds.Get(wxctx.APIPath("/workflows/list")) + "; " + ds.Get(wxctx.APIPath("/workflows/stats")))... }
-			>
-				Refresh
-			</button>
-		</div>
-		// Table
-		<div class="overflow-x-auto rounded-lg border border-base-300">
-			<table class="table table-zebra">
-				<thead>
-					<tr class="bg-base-200">
-						<th>ID</th>
-						<th>Name</th>
-						<th>Status</th>
-						<th>User</th>
-						<th>Created</th>
-						<th>Attempts</th>
-						<th class="w-20"></th>
-					</tr>
-				</thead>
-				<tbody
-					id="wf-table-body"
-					{ ds.Init(ds.Get(wxctx.APIPath("/workflows/list")))... }
+			// Filters
+			<div class="flex items-center gap-3 flex-wrap mb-6">
+				<select
+					class="select select-bordered select-sm"
+					{ ds.Bind("wf_filter", "status")... }
+					{ ds.On("change", signals.Set("page", "0") + "; " + ds.Get(wxctx.APIPath("/workflows/list")))... }
 				>
-					<tr>
-						<td colspan="7" class="text-center py-8 text-base-content/50">
-							<span class="loading loading-spinner"></span>
-						</td>
-					</tr>
-				</tbody>
-			</table>
+					<option value="">All Statuses</option>
+					<option value="PENDING">Pending</option>
+					<option value="ENQUEUED">Enqueued</option>
+					<option value="SUCCESS">Success</option>
+					<option value="ERROR">Error</option>
+					<option value="CANCELLED">Cancelled</option>
+				</select>
+				<input
+					type="text"
+					class="input input-bordered input-sm w-64"
+					placeholder="Search by name..."
+					{ ds.Bind("wf_filter", "name")... }
+					{ ds.On("input.debounce_300ms", signals.Set("page", "0") + "; " + ds.Get(wxctx.APIPath("/workflows/list")))... }
+				/>
+				<div class="flex-1"></div>
+				// Auto-refresh selector
+				<select
+					class="select select-bordered select-sm"
+					{ ds.Bind("wf_filter", "refresh")... }
+				>
+					<option value="0">Auto-refresh: Off</option>
+					<option value="1000">1s</option>
+					<option value="5000">5s</option>
+					<option value="10000">10s</option>
+					<option value="30000">30s</option>
+					<option value="60000">1min</option>
+				</select>
+				<button
+					class="btn btn-ghost btn-sm"
+					{ ds.OnClick(ds.Get(wxctx.APIPath("/workflows/list")) + "; " + ds.Get(wxctx.APIPath("/workflows/stats")))... }
+				>
+					Refresh
+				</button>
+			</div>
+			// Table
+			<div class="overflow-x-auto rounded-lg border border-base-300">
+				<table class="table table-zebra">
+					<thead>
+						<tr class="bg-base-200">
+							<th>ID</th>
+							<th>Name</th>
+							<th>Status</th>
+							<th>User</th>
+							<th>Created</th>
+							<th>Attempts</th>
+							<th class="w-20"></th>
+						</tr>
+					</thead>
+					<tbody
+						id="wf-table-body"
+						{ ds.Init(ds.Get(wxctx.APIPath("/workflows/list")))... }
+					>
+						<tr>
+							<td colspan="7" class="text-center py-8 text-base-content/50">
+								<span class="loading loading-spinner"></span>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			// Pagination
+			<div id="wf-pagination" class="flex justify-center mt-4"></div>
 		</div>
-		// Pagination
-		<div id="wf-pagination" class="flex justify-center"></div>
+		// Full-page detail view (shown when expanded_id is set)
+		<div id="wf-detail-full" { ds.Show(signals.Signal("expanded_id"))... }></div>
 	</div>
 }

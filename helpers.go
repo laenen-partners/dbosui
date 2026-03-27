@@ -1,6 +1,7 @@
 package dbosui
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -34,6 +35,10 @@ func formatDuration(d time.Duration) string {
 }
 
 func prettyJSON(v any) string {
+	// If it's a string, it might be base64-encoded JSON from DBOS.
+	if s, ok := v.(string); ok {
+		return prettyJSONString(s)
+	}
 	b, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
 		return fmt.Sprintf("%v", v)
@@ -41,14 +46,53 @@ func prettyJSON(v any) string {
 	return string(b)
 }
 
-func truncateJSON(v any) string {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return fmt.Sprintf("%v", v)
+// prettyJSONString tries to decode a string as base64 → JSON, plain JSON, or returns as-is.
+func prettyJSONString(s string) string {
+	// Try base64 decode first (DBOS encodes values as base64 JSON).
+	if decoded, err := base64.StdEncoding.DecodeString(s); err == nil {
+		if formatted := tryFormatJSON(decoded); formatted != "" {
+			return formatted
+		}
+		// Base64 decoded but not JSON - return decoded string.
+		return string(decoded)
 	}
-	s := string(b)
-	if len(s) > 60 {
-		return s[:60] + "..."
+	// Try parsing as plain JSON.
+	if formatted := tryFormatJSON([]byte(s)); formatted != "" {
+		return formatted
 	}
 	return s
+}
+
+func tryFormatJSON(b []byte) string {
+	var v any
+	if err := json.Unmarshal(b, &v); err != nil {
+		return ""
+	}
+	formatted, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		return ""
+	}
+	return string(formatted)
+}
+
+func truncateJSON(v any) string {
+	s := prettyJSON(v)
+	// Collapse to single line for truncation.
+	compact, err := json.Marshal(json.RawMessage(s))
+	if err != nil {
+		if len(s) > 60 {
+			return s[:60] + "..."
+		}
+		return s
+	}
+	cs := string(compact)
+	if len(cs) > 60 {
+		return cs[:60] + "..."
+	}
+	return cs
+}
+
+// decodeDBOSValue decodes a DBOS-stored value (base64 JSON or plain JSON string).
+func decodeDBOSValue(s string) string {
+	return prettyJSONString(s)
 }
