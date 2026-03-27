@@ -1,0 +1,280 @@
+package dbosui
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/laenen-partners/dsx"
+	"github.com/laenen-partners/dsx/ds"
+	"github.com/laenen-partners/dsx/ui/badge"
+)
+
+templ StatsBar(s Stats) {
+	<div id="wf-stats" class="stats shadow w-full">
+		<div class="stat">
+			<div class="stat-title">Total</div>
+			<div class="stat-value">{ fmt.Sprintf("%d", s.Total) }</div>
+		</div>
+		<div class="stat">
+			<div class="stat-title">Pending</div>
+			<div class="stat-value text-warning">{ fmt.Sprintf("%d", s.Pending) }</div>
+		</div>
+		<div class="stat">
+			<div class="stat-title">Success</div>
+			<div class="stat-value text-success">{ fmt.Sprintf("%d", s.Success) }</div>
+		</div>
+		<div class="stat">
+			<div class="stat-title">Failed</div>
+			<div class="stat-value text-error">{ fmt.Sprintf("%d", s.Failed) }</div>
+		</div>
+		<div class="stat">
+			<div class="stat-title">Cancelled</div>
+			<div class="stat-value text-base-content/50">{ fmt.Sprintf("%d", s.Cancelled) }</div>
+		</div>
+	</div>
+}
+
+templ WorkflowTableBody(workflows []WorkflowInfo, page int, total int) {
+	{{ wxctx := dsx.FromContext(ctx) }}
+	<tbody id="wf-table-body">
+		if len(workflows) == 0 {
+			<tr>
+				<td colspan="7" class="text-center py-8 text-base-content/50">
+					No workflows found
+				</td>
+			</tr>
+		}
+		for _, wf := range workflows {
+			@workflowRow(wf, wxctx.APIPath(fmt.Sprintf("/workflows/%s/detail", wf.ID)))
+		}
+	</tbody>
+	@paginationBar(page, total, 25, wxctx.APIPath("/workflows/list"))
+}
+
+templ workflowRow(wf WorkflowInfo, detailURL string) {
+	<tr class="hover cursor-pointer" { ds.OnClick(ds.Get(detailURL))... }>
+		<td>
+			<code class="text-xs">{ truncateID(wf.ID) }</code>
+		</td>
+		<td class="font-medium">{ wf.Name }</td>
+		<td>
+			@statusBadge(wf.Status)
+		</td>
+		<td class="text-sm text-base-content/70">{ wf.AuthenticatedUser }</td>
+		<td class="text-sm text-base-content/70">{ formatTime(wf.CreatedAt) }</td>
+		<td class="text-sm">
+			if wf.Attempts > 1 {
+				<span class="text-warning font-medium">{ fmt.Sprintf("%d", wf.Attempts) }</span>
+			} else {
+				{ fmt.Sprintf("%d", wf.Attempts) }
+			}
+		</td>
+		<td>
+			<button
+				class="btn btn-ghost btn-xs"
+				{ ds.OnClick(ds.Get(detailURL))... }
+			>
+				Details
+			</button>
+		</td>
+	</tr>
+}
+
+templ statusBadge(status WorkflowStatus) {
+	if status == StatusSuccess {
+		@badge.Badge(badge.Props{Variant: badge.VariantSuccess, Size: badge.SizeSm}) {
+			Success
+		}
+	} else if status == StatusError {
+		@badge.Badge(badge.Props{Variant: badge.VariantError, Size: badge.SizeSm}) {
+			Error
+		}
+	} else if status == StatusPending {
+		@badge.Badge(badge.Props{Variant: badge.VariantWarning, Size: badge.SizeSm}) {
+			Pending
+		}
+	} else if status == StatusEnqueued {
+		@badge.Badge(badge.Props{Variant: badge.VariantInfo, Size: badge.SizeSm}) {
+			Enqueued
+		}
+	} else if status == StatusCancelled {
+		@badge.Badge(badge.Props{Style: badge.StyleGhost, Size: badge.SizeSm}) {
+			Cancelled
+		}
+	} else if status == StatusRetries {
+		@badge.Badge(badge.Props{Variant: badge.VariantError, Style: badge.StyleOutline, Size: badge.SizeSm}) {
+			Max Retries
+		}
+	} else {
+		@badge.Badge(badge.Props{Size: badge.SizeSm}) {
+			{ string(status) }
+		}
+	}
+}
+
+templ DetailContent(wf *WorkflowInfo, steps []StepInfo) {
+	{{ wxctx := dsx.FromContext(ctx) }}
+	<div class="space-y-6">
+		<div>
+			<h2 class="text-xl font-bold">{ wf.Name }</h2>
+			<p class="text-sm text-base-content/60 font-mono mt-1">{ wf.ID }</p>
+		</div>
+		// Status and queue
+		<div class="flex items-center gap-3">
+			@statusBadge(wf.Status)
+			if wf.QueueName != "" {
+				@badge.Badge(badge.Props{Style: badge.StyleOutline, Size: badge.SizeSm}) {
+					{ wf.QueueName }
+				}
+			}
+		</div>
+		// Details grid
+		<div class="grid grid-cols-2 gap-4 text-sm">
+			<div>
+				<span class="text-base-content/60 block">User</span>
+				<p class="font-medium">{ wf.AuthenticatedUser }</p>
+			</div>
+			<div>
+				<span class="text-base-content/60 block">App Version</span>
+				<p class="font-medium">{ wf.ApplicationVersion }</p>
+			</div>
+			<div>
+				<span class="text-base-content/60 block">Created</span>
+				<p class="font-medium">{ wf.CreatedAt.Format(time.RFC3339) }</p>
+			</div>
+			<div>
+				<span class="text-base-content/60 block">Updated</span>
+				<p class="font-medium">{ wf.UpdatedAt.Format(time.RFC3339) }</p>
+			</div>
+			<div>
+				<span class="text-base-content/60 block">Duration</span>
+				<p class="font-medium">{ formatDuration(wf.UpdatedAt.Sub(wf.CreatedAt)) }</p>
+			</div>
+			<div>
+				<span class="text-base-content/60 block">Attempts</span>
+				<p class="font-medium">{ fmt.Sprintf("%d", wf.Attempts) }</p>
+			</div>
+		</div>
+		// Error
+		if wf.Error != "" {
+			<div class="alert alert-error">
+				<div>
+					<span class="font-bold">Error</span>
+					<p class="text-sm mt-1">{ wf.Error }</p>
+				</div>
+			</div>
+		}
+		// Input
+		if wf.Input != nil {
+			<div>
+				<h3 class="font-semibold mb-2">Input</h3>
+				<pre class="bg-base-200 p-3 rounded-lg text-xs overflow-auto max-h-48"><code>{ prettyJSON(wf.Input) }</code></pre>
+			</div>
+		}
+		// Output
+		if wf.Output != nil {
+			<div>
+				<h3 class="font-semibold mb-2">Output</h3>
+				<pre class="bg-base-200 p-3 rounded-lg text-xs overflow-auto max-h-48"><code>{ prettyJSON(wf.Output) }</code></pre>
+			</div>
+		}
+		// Steps
+		if len(steps) > 0 {
+			<div>
+				<h3 class="font-semibold mb-2">Steps</h3>
+				@StepsTable(steps)
+			</div>
+		}
+		// Actions
+		<div class="flex gap-2 pt-4 border-t border-base-300">
+			if wf.Status == StatusPending || wf.Status == StatusEnqueued {
+				<button
+					class="btn btn-error btn-sm"
+					{ ds.OnClick(ds.Post(wxctx.APIPath(fmt.Sprintf("/workflows/%s/cancel", wf.ID))))... }
+				>
+					Cancel Workflow
+				</button>
+			}
+			if wf.Status == StatusError || wf.Status == StatusCancelled {
+				<button
+					class="btn btn-primary btn-sm"
+					{ ds.OnClick(ds.Post(wxctx.APIPath(fmt.Sprintf("/workflows/%s/resume", wf.ID))))... }
+				>
+					Resume Workflow
+				</button>
+			}
+		</div>
+	</div>
+}
+
+templ StepsTable(steps []StepInfo) {
+	<div class="overflow-x-auto">
+		<table class="table table-xs">
+			<thead>
+				<tr>
+					<th>#</th>
+					<th>Name</th>
+					<th>Status</th>
+					<th>Details</th>
+				</tr>
+			</thead>
+			<tbody>
+				for _, step := range steps {
+					<tr>
+						<td>{ fmt.Sprintf("%d", step.StepID) }</td>
+						<td class="font-mono text-xs">{ step.Name }</td>
+						<td>
+							if step.Error != "" {
+								@badge.Badge(badge.Props{Variant: badge.VariantError, Size: badge.SizeXs}) {
+									Error
+								}
+							} else {
+								@badge.Badge(badge.Props{Variant: badge.VariantSuccess, Size: badge.SizeXs}) {
+									OK
+								}
+							}
+						</td>
+						<td class="text-xs max-w-xs truncate">
+							if step.Error != "" {
+								<span class="text-error">{ step.Error }</span>
+							} else if step.Output != nil {
+								<code>{ truncateJSON(step.Output) }</code>
+							}
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+}
+
+templ paginationBar(page int, total int, limit int, listURL string) {
+	{{ totalPages := (total + limit - 1) / limit }}
+	<div id="wf-pagination" class="flex items-center justify-between">
+		if total > 0 {
+			<span class="text-sm text-base-content/60">
+				{ fmt.Sprintf("Showing %d\u2013%d of %d", page*limit+1, min(page*limit+limit, total), total) }
+			</span>
+		}
+		if totalPages > 1 {
+			<div class="join">
+				if page > 0 {
+					<button
+						class="join-item btn btn-sm"
+						{ ds.OnClick(fmt.Sprintf("$wf_filter.page = %d; %s", page-1, ds.Get(listURL)))... }
+					>
+						Prev
+					</button>
+				}
+				if page < totalPages-1 {
+					<button
+						class="join-item btn btn-sm"
+						{ ds.OnClick(fmt.Sprintf("$wf_filter.page = %d; %s", page+1, ds.Get(listURL)))... }
+					>
+						Next
+					</button>
+				}
+			</div>
+		}
+	</div>
+}

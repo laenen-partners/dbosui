@@ -1,0 +1,112 @@
+version: "3"
+
+dotenv: [".env"]
+
+tasks:
+  # --- Setup ---
+
+  setup:
+    desc: Install all dependencies
+    cmds:
+      - task: setup:go
+
+  setup:go:
+    desc: Install Go dependencies
+    cmds:
+      - go mod download
+      - go mod verify
+
+  # --- Generate ---
+
+  generate:
+    desc: Generate templ code
+    cmds:
+      - go tool templ generate
+    sources:
+      - "**/*.templ"
+    generates:
+      - "**/*_templ.go"
+
+  # --- Build ---
+
+  build:
+    desc: Build the admin UI binary
+    cmds:
+      - go build -o bin/dbosui ./cmd/dbosui
+    deps:
+      - generate
+
+  # --- Run ---
+
+  run:
+    desc: Run the admin UI (reads DBOS_POSTGRES_URL from .env)
+    cmds:
+      - go run ./cmd/dbosui {{.CLI_ARGS}}
+    deps:
+      - generate
+
+  run:mock:
+    desc: Run with mock data (no database needed)
+    cmds:
+      - go run ./cmd/dbosui --mock {{.CLI_ARGS}}
+    deps:
+      - generate
+
+  # --- Live reload (development) ---
+
+  live:templ:
+    desc: Watch and regenerate templ files
+    cmds:
+      - go tool templ generate -watch
+
+  live:
+    desc: Start dev server with live reload
+    deps:
+      - live:templ
+    cmds:
+      - |
+        go tool air \
+          -build.cmd "go build -o tmp/bin/dbosui ./cmd/dbosui" \
+          -build.bin "tmp/bin/dbosui" \
+          -build.exclude_dir "tmp,bin,.git" \
+          -build.include_ext "go" \
+          -build.exclude_regex "_test\\.go$$" \
+          -misc.clean_on_exit "true"
+
+  # --- Formatting ---
+
+  format:
+    desc: Format all code
+    cmds:
+      - task: format:go
+      - task: format:templ
+
+  format:go:
+    desc: Format Go code
+    cmds:
+      - gofumpt -l -w .
+
+  format:templ:
+    desc: Format templates
+    cmds:
+      - go tool templ fmt .
+
+  # --- Linting ---
+
+  lint:
+    desc: Lint all code
+    cmds:
+      - golangci-lint run
+
+  # --- Testing ---
+
+  test:
+    desc: Run all tests
+    cmds:
+      - go test ./...
+
+  # --- Default ---
+
+  default:
+    cmds:
+      - task: run
