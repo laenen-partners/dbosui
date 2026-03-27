@@ -11,11 +11,10 @@ import (
 
 // filterSignals matches the Datastar signals on the workflow filter form.
 type filterSignals struct {
-	Status     string `json:"status"`
-	Name       string `json:"name"`
-	Page       int    `json:"page"`
-	Refresh    int    `json:"refresh"`
-	ExpandedID string `json:"expanded_id"`
+	Status  string `json:"status"`
+	Name    string `json:"name"`
+	Page    int    `json:"page"`
+	Refresh int    `json:"refresh"`
 }
 
 type workflowHandlers struct {
@@ -94,25 +93,6 @@ func (h *workflowHandlers) detail() http.HandlerFunc {
 
 		sse := datastar.NewSSE(w, r)
 		_ = ds.Send.Drawer(sse, DetailContent(wf, steps, events))
-	}
-}
-
-func (h *workflowHandlers) fullpage() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := chi.URLParam(r, "id")
-		wf, err := h.client.GetWorkflow(r.Context(), id)
-		if err != nil {
-			sse := datastar.NewSSE(w, r)
-			_ = ds.Send.Toast(sse, ds.ToastError, fmt.Sprintf("Workflow not found: %v", err))
-			return
-		}
-
-		steps, _ := h.client.GetWorkflowSteps(r.Context(), id)
-		events, _ := h.client.GetWorkflowEvents(r.Context(), id)
-
-		sse := datastar.NewSSE(w, r)
-		_ = ds.Send.HideDrawer(sse)
-		_ = ds.Send.Patch(sse, DetailFullPage(wf, steps, events))
 	}
 }
 

@@ -114,7 +114,15 @@ templ statusBadge(status WorkflowStatus) {
 
 templ DetailContent(wf *WorkflowInfo, steps []StepInfo, events []EventInfo) {
 	{{ wxctx := dsx.FromContext(ctx) }}
-	<div class="space-y-6">
+	// Expand/collapse icon at top-left of drawer (toggles max-w-lg ↔ max-w-full)
+	<button
+		class="btn btn-sm btn-circle btn-ghost absolute left-4 top-4"
+		title="Expand / Collapse"
+		data-on:click="let p=document.querySelector('#drawer-panel > div:last-child'); p.classList.toggle('max-w-lg'); p.classList.toggle('max-w-full')"
+	>
+		&#x21D4;
+	</button>
+	<div class="space-y-6 mt-4">
 		<div>
 			<h2 class="text-xl font-bold">{ wf.Name }</h2>
 			<p class="text-sm text-base-content/60 font-mono mt-1">{ wf.ID }</p>
@@ -192,139 +200,6 @@ templ DetailContent(wf *WorkflowInfo, steps []StepInfo, events []EventInfo) {
 				@StepsTable(steps)
 			</div>
 		}
-		// Actions
-		<div class="flex gap-2 pt-4 border-t border-base-300">
-			<button
-				class="btn btn-ghost btn-sm"
-				{ ds.OnClick(fmt.Sprintf("$wf_filter.expanded_id = '%s'; %s", wf.ID, ds.Get(wxctx.APIPath(fmt.Sprintf("/workflows/%s/fullpage", wf.ID)))))... }
-			>
-				Expand
-			</button>
-			if wf.Status == StatusPending || wf.Status == StatusEnqueued {
-				<button
-					class="btn btn-error btn-sm"
-					{ ds.OnClick(ds.Post(wxctx.APIPath(fmt.Sprintf("/workflows/%s/cancel", wf.ID))))... }
-				>
-					Cancel Workflow
-				</button>
-			}
-			if wf.Status == StatusError || wf.Status == StatusCancelled {
-				<button
-					class="btn btn-primary btn-sm"
-					{ ds.OnClick(ds.Post(wxctx.APIPath(fmt.Sprintf("/workflows/%s/resume", wf.ID))))... }
-				>
-					Resume Workflow
-				</button>
-			}
-		</div>
-	</div>
-}
-
-templ DetailFullPage(wf *WorkflowInfo, steps []StepInfo, events []EventInfo) {
-	{{ wxctx := dsx.FromContext(ctx) }}
-	<div id="wf-detail-full" class="space-y-6">
-		// Header with back button
-		<div class="flex items-center gap-4">
-			<button
-				class="btn btn-ghost btn-sm"
-				{ ds.OnClick("$wf_filter.expanded_id = ''")... }
-			>
-				&larr; Back to list
-			</button>
-			<div class="flex-1">
-				<h1 class="text-2xl font-bold">{ wf.Name }</h1>
-				<p class="text-sm text-base-content/60 font-mono">{ wf.ID }</p>
-			</div>
-			@statusBadge(wf.Status)
-			if wf.QueueName != "" {
-				@badge.Badge(badge.Props{Style: badge.StyleOutline, Size: badge.SizeSm}) {
-					{ wf.QueueName }
-				}
-			}
-		</div>
-		// Two-column layout for full page
-		<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-			// Left column: metadata
-			<div class="space-y-6">
-				<div class="card bg-base-200">
-					<div class="card-body">
-						<h3 class="card-title text-sm">Details</h3>
-						<div class="grid grid-cols-2 gap-4 text-sm">
-							<div>
-								<span class="text-base-content/60 block">User</span>
-								<p class="font-medium">{ wf.AuthenticatedUser }</p>
-							</div>
-							<div>
-								<span class="text-base-content/60 block">App Version</span>
-								<p class="font-medium">{ wf.ApplicationVersion }</p>
-							</div>
-							<div>
-								<span class="text-base-content/60 block">Created</span>
-								<p class="font-medium">{ wf.CreatedAt.Format(time.RFC3339) }</p>
-							</div>
-							<div>
-								<span class="text-base-content/60 block">Updated</span>
-								<p class="font-medium">{ wf.UpdatedAt.Format(time.RFC3339) }</p>
-							</div>
-							<div>
-								<span class="text-base-content/60 block">Duration</span>
-								<p class="font-medium">{ formatDuration(wf.UpdatedAt.Sub(wf.CreatedAt)) }</p>
-							</div>
-							<div>
-								<span class="text-base-content/60 block">Attempts</span>
-								<p class="font-medium">{ fmt.Sprintf("%d", wf.Attempts) }</p>
-							</div>
-						</div>
-					</div>
-				</div>
-				// Error
-				if wf.Error != "" {
-					<div class="alert alert-error">
-						<div>
-							<span class="font-bold">Error</span>
-							<p class="text-sm mt-1">{ wf.Error }</p>
-						</div>
-					</div>
-				}
-				// Events
-				if len(events) > 0 {
-					<div class="card bg-base-200">
-						<div class="card-body">
-							<h3 class="card-title text-sm">Events</h3>
-							@EventsTable(events)
-						</div>
-					</div>
-				}
-				// Steps
-				if len(steps) > 0 {
-					<div class="card bg-base-200">
-						<div class="card-body">
-							<h3 class="card-title text-sm">Steps</h3>
-							@StepsTable(steps)
-						</div>
-					</div>
-				}
-			</div>
-			// Right column: input/output
-			<div class="space-y-6">
-				if wf.Input != nil {
-					<div class="card bg-base-200">
-						<div class="card-body">
-							<h3 class="card-title text-sm">Input</h3>
-							<pre class="bg-base-300 p-3 rounded-lg text-xs overflow-auto max-h-96"><code>{ prettyJSON(wf.Input) }</code></pre>
-						</div>
-					</div>
-				}
-				if wf.Output != nil {
-					<div class="card bg-base-200">
-						<div class="card-body">
-							<h3 class="card-title text-sm">Output</h3>
-							<pre class="bg-base-300 p-3 rounded-lg text-xs overflow-auto max-h-96"><code>{ prettyJSON(wf.Output) }</code></pre>
-						</div>
-					</div>
-				}
-			</div>
-		</div>
 		// Actions
 		<div class="flex gap-2 pt-4 border-t border-base-300">
 			if wf.Status == StatusPending || wf.Status == StatusEnqueued {
