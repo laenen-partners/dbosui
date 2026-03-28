@@ -205,19 +205,26 @@ templ DetailContent(wf *WorkflowInfo, steps []StepInfo, events []EventInfo) {
 			if wf.Status == StatusPending || wf.Status == StatusEnqueued {
 				<button
 					class="btn btn-error btn-sm"
-					{ ds.OnClick(ds.Post(wxctx.APIPath(fmt.Sprintf("/workflows/%s/cancel", wf.ID))))... }
+					{ ds.OnClick(ds.Get(wxctx.APIPath(fmt.Sprintf("/workflows/%s/confirm-cancel", wf.ID))))... }
 				>
-					Cancel Workflow
+					Cancel
 				</button>
 			}
 			if wf.Status == StatusError || wf.Status == StatusCancelled {
 				<button
 					class="btn btn-primary btn-sm"
-					{ ds.OnClick(ds.Post(wxctx.APIPath(fmt.Sprintf("/workflows/%s/resume", wf.ID))))... }
+					{ ds.OnClick(ds.Get(wxctx.APIPath(fmt.Sprintf("/workflows/%s/confirm-resume", wf.ID))))... }
 				>
-					Resume Workflow
+					Resume
 				</button>
 			}
+			<div class="flex-1"></div>
+			<button
+				class="btn btn-ghost btn-sm text-error"
+				{ ds.OnClick(ds.Get(wxctx.APIPath(fmt.Sprintf("/workflows/%s/confirm-delete", wf.ID))))... }
+			>
+				Delete
+			</button>
 		</div>
 	</div>
 }

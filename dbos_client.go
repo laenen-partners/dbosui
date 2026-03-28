@@ -240,6 +240,18 @@ func (c *DBOSClient) ResumeWorkflow(_ context.Context, id string) error {
 	return err
 }
 
+func (c *DBOSClient) DeleteWorkflow(ctx context.Context, id string) error {
+	query := fmt.Sprintf("DELETE FROM %s.workflow_status WHERE workflow_uuid = $1", c.schema)
+	result, err := c.pool.Exec(ctx, query, id)
+	if err != nil {
+		return fmt.Errorf("dbosui: delete workflow: %w", err)
+	}
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("dbosui: workflow %q not found", id)
+	}
+	return nil
+}
+
 // fromDBOS converts a dbos.WorkflowStatus to our WorkflowInfo.
 func fromDBOS(wf dbos.WorkflowStatus) WorkflowInfo {
 	info := WorkflowInfo{

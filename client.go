@@ -94,6 +94,7 @@ type Client interface {
 	GetWorkflowEvents(ctx context.Context, id string) ([]EventInfo, error)
 	CancelWorkflow(ctx context.Context, id string) error
 	ResumeWorkflow(ctx context.Context, id string) error
+	DeleteWorkflow(ctx context.Context, id string) error
 }
 
 // MockClient returns an in-memory client with sample data for testing.
@@ -258,6 +259,16 @@ func (m *mockClient) ResumeWorkflow(_ context.Context, id string) error {
 		if wf.ID == id {
 			m.workflows[i].Status = StatusPending
 			m.workflows[i].UpdatedAt = time.Now()
+			return nil
+		}
+	}
+	return fmt.Errorf("workflow %q not found", id)
+}
+
+func (m *mockClient) DeleteWorkflow(_ context.Context, id string) error {
+	for i, wf := range m.workflows {
+		if wf.ID == id {
+			m.workflows = append(m.workflows[:i], m.workflows[i+1:]...)
 			return nil
 		}
 	}

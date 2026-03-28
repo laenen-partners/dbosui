@@ -72,8 +72,12 @@ func Handler(cfg Config) http.Handler {
 	r.Get("/workflows/stats", h.stats())
 	r.Get("/workflows/{id}/detail", h.detail())
 	r.Get("/workflows/{id}/steps", h.steps())
+	r.Get("/workflows/{id}/confirm-cancel", h.confirmCancel())
+	r.Get("/workflows/{id}/confirm-resume", h.confirmResume())
 	r.Post("/workflows/{id}/cancel", h.cancel())
 	r.Post("/workflows/{id}/resume", h.resume())
+	r.Get("/workflows/{id}/confirm-delete", h.confirmDelete())
+	r.Post("/workflows/{id}/delete", h.deleteWorkflow())
 
 	return r
 }
