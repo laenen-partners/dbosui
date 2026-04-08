@@ -114,15 +114,7 @@ templ statusBadge(status WorkflowStatus) {
 
 templ DetailContent(wf *WorkflowInfo, steps []StepInfo, events []EventInfo) {
 	{{ wxctx := dsx.FromContext(ctx) }}
-	// Expand/collapse icon at top-left of drawer (toggles max-w-lg ↔ max-w-full)
-	<button
-		class="btn btn-sm btn-circle btn-ghost absolute left-4 top-4"
-		title="Expand / Collapse"
-		data-on:click="let p=document.querySelector('#drawer-panel > div:last-child'); p.classList.toggle('max-w-lg'); p.classList.toggle('max-w-full')"
-	>
-		&#x21D4;
-	</button>
-	<div class="space-y-6 mt-4">
+	<div class="space-y-6">
 		<div>
 			<h2 class="text-xl font-bold">{ wf.Name }</h2>
 			<p class="text-sm text-base-content/60 font-mono mt-1">{ wf.ID }</p>
