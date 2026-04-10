@@ -4,6 +4,10 @@ Admin UI for [DBOS](https://dbos.dev) workflows, built with the [dsx](https://gi
 
 Browse, filter, inspect, and manage DBOS workflow executions from a web dashboard. Connects to the DBOS system database via the official Go client or direct SQL queries.
 
+![overview](./docs/ui-overview.png)
+![detail](./docs/ui-detail.png)
+![detail-expanded](./docs/ui-detail-expanded.png)
+
 ## Features
 
 - **Workflow list** with status filtering, name search (substring, debounced), and pagination
