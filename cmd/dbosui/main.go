@@ -3,64 +3,143 @@ package main
 import (
 	"bufio"
 	"context"
-	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
-	"strconv"
+	"os/signal"
+	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
+
+	"github.com/urfave/cli/v3"
 
 	"github.com/laenen-partners/dbosui"
 )
 
 func main() {
-	port := flag.Int("port", 8080, "port to listen on")
-	mock := flag.Bool("mock", false, "use mock data instead of database")
-	flag.Parse()
-
-	// Load .env file if it exists (does not override existing env vars).
-	loadDotenv(".env")
-
-	// PORT env var overrides the flag.
-	if p, err := strconv.Atoi(os.Getenv("PORT")); err == nil {
-		*port = p
+	cmd := &cli.Command{
+		Name:    "dbosui",
+		Usage:   "DBOS workflow admin UI",
+		Version: "0.1.0",
+		Commands: []*cli.Command{
+			serveCommand(),
+		},
+		DefaultCommand: "serve",
 	}
 
-	dsn := os.Getenv("DBOS_POSTGRES_URL")
+	if err := cmd.Run(context.Background(), os.Args); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func serveCommand() *cli.Command {
+	return &cli.Command{
+		Name:  "serve",
+		Usage: "Run the DBOS admin UI HTTP server",
+		Flags: []cli.Flag{
+			&cli.IntFlag{
+				Name:    "port",
+				Aliases: []string{"p"},
+				Usage:   "TCP port to listen on",
+				Value:   8080,
+				Sources: cli.EnvVars("PORT"),
+			},
+			&cli.StringFlag{
+				Name:    "database-url",
+				Usage:   "Postgres connection string for the DBOS system DB",
+				Sources: cli.EnvVars("DATABASE_URL", "DBOS_POSTGRES_URL"),
+			},
+			&cli.StringFlag{
+				Name:  "base-path",
+				Usage: "URL prefix the UI is served under",
+				Value: "/",
+			},
+			&cli.BoolFlag{
+				Name:  "mock",
+				Usage: "Serve mock data instead of connecting to a database",
+			},
+			&cli.StringFlag{
+				Name:  "env-file",
+				Usage: "Path to a .env file to load (skipped if missing)",
+				Value: ".env",
+			},
+		},
+		Action: runServe,
+	}
+}
+
+func runServe(ctx context.Context, cmd *cli.Command) error {
+	if path := cmd.String("env-file"); path != "" {
+		loadDotenv(path)
+	}
+
+	port := int(cmd.Int("port"))
+	basePath := cmd.String("base-path")
+	mock := cmd.Bool("mock")
+	dsn := cmd.String("database-url")
 
 	var client dbosui.Client
-	if *mock {
+	switch {
+	case mock:
 		fmt.Println("Running with mock data")
 		client = dbosui.MockClient()
-	} else if dsn == "" {
-		fmt.Println("DBOS_POSTGRES_URL not set. Use --mock for demo data, or set DBOS_POSTGRES_URL in .env")
-		os.Exit(1)
-	} else {
+	case dsn == "":
+		return fmt.Errorf("no database connection: set --database-url, $DATABASE_URL/$DBOS_POSTGRES_URL, or pass --mock")
+	default:
 		fmt.Printf("Connecting to DBOS database: %s\n", redactDSN(dsn))
-		ctx := context.Background()
 		dbosClient, err := dbosui.NewDBOSClient(ctx, dsn)
 		if err != nil {
-			log.Fatalf("Failed to connect to DBOS: %v", err)
+			return fmt.Errorf("connect to DBOS: %w", err)
 		}
 		defer dbosClient.Shutdown(5 * time.Second)
 		client = dbosClient
 	}
 
-	fmt.Printf("Starting DBOS Admin UI on http://localhost:%d\n", *port)
-
-	cfg := dbosui.Config{
-		Client: client,
+	mux := http.NewServeMux()
+	uiHandler := dbosui.Handler(dbosui.Config{Client: client, BasePath: basePath})
+	if basePath == "/" || basePath == "" {
+		mux.Handle("/", uiHandler)
+	} else {
+		prefix := strings.TrimSuffix(basePath, "/")
+		mux.Handle(prefix+"/", http.StripPrefix(prefix, uiHandler))
 	}
 
-	if err := dbosui.Run(cfg, *port); err != nil {
-		log.Fatal(err)
+	srv := &http.Server{
+		Addr:              fmt.Sprintf(":%d", port),
+		Handler:           mux,
+		ReadHeaderTimeout: 10 * time.Second,
 	}
+
+	go func() {
+		<-ctx.Done()
+		shutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = srv.Shutdown(shutdown)
+	}()
+
+	signalCtx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	go func() {
+		<-signalCtx.Done()
+		shutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = srv.Shutdown(shutdown)
+	}()
+
+	fmt.Printf("DBOS Admin UI listening on http://localhost:%d%s\n", port, basePath)
+	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		return err
+	}
+	return nil
 }
 
-// loadDotenv reads a .env file and sets any variables not already in the environment.
+// loadDotenv reads key=value pairs from path and sets them in the process
+// environment if not already set. Missing files are silently ignored.
 func loadDotenv(path string) {
-	f, err := os.Open(path)
+	abs, _ := filepath.Abs(path)
+	f, err := os.Open(abs)
 	if err != nil {
 		return
 	}
@@ -77,34 +156,33 @@ func loadDotenv(path string) {
 			continue
 		}
 		key = strings.TrimSpace(key)
-		value = strings.TrimSpace(value)
-		// Don't override existing env vars.
+		value = strings.TrimSpace(strings.Trim(value, `"'`))
 		if _, exists := os.LookupEnv(key); !exists {
-			os.Setenv(key, value)
+			_ = os.Setenv(key, value)
 		}
 	}
 }
 
-// redactDSN hides the password in a connection string for logging.
+// redactDSN hides the password in a Postgres URL for safe logging.
 func redactDSN(dsn string) string {
-	result := []byte(dsn)
-	inPassword := false
+	out := []byte(dsn)
 	afterScheme := false
-	for i := range result {
-		if i > 2 && string(result[i-2:i+1]) == "://" {
+	inPassword := false
+	for i := range out {
+		if i > 2 && string(out[i-2:i+1]) == "://" {
 			afterScheme = true
 		}
-		if afterScheme && result[i] == ':' && !inPassword {
+		if afterScheme && out[i] == ':' && !inPassword {
 			inPassword = true
 			continue
 		}
-		if inPassword && result[i] == '@' {
+		if inPassword && out[i] == '@' {
 			inPassword = false
 			continue
 		}
 		if inPassword {
-			result[i] = '*'
+			out[i] = '*'
 		}
 	}
-	return string(result)
+	return string(out)
 }

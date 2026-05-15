@@ -3,3 +3,8 @@ tmp/
 .env
 .DS_Store
 .task/
+
+# Web SPA build output is regenerated from sources.
+web/node_modules/
+web/dist/*
+!web/dist/.gitkeep

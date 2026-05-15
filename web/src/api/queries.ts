@@ -1,0 +1,114 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { notifications } from '@mantine/notifications';
+
+import { workflowClient } from './client.js';
+import type { WorkflowStatus } from '../gen/dbosui/v1/workflows_pb.js';
+
+export type ListParams = {
+  statuses: WorkflowStatus[];
+  name: string;
+  limit: number;
+  offset: number;
+  sortDesc: boolean;
+};
+
+export function useWorkflows(params: ListParams) {
+  return useQuery({
+    queryKey: ['workflows', params],
+    queryFn: () =>
+      workflowClient.listWorkflows({
+        statuses: params.statuses,
+        name: params.name,
+        limit: params.limit,
+        offset: params.offset,
+        sortDesc: params.sortDesc,
+      }),
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useStats() {
+  return useQuery({
+    queryKey: ['stats'],
+    queryFn: () => workflowClient.getStats({}),
+  });
+}
+
+export function useWorkflowNames() {
+  return useQuery({
+    queryKey: ['workflow-names'],
+    queryFn: () => workflowClient.listWorkflowNames({}),
+    staleTime: 60_000,
+  });
+}
+
+export function useWorkflow(id: string | null) {
+  return useQuery({
+    queryKey: ['workflow', id],
+    queryFn: () => workflowClient.getWorkflow({ id: id! }),
+    enabled: !!id,
+  });
+}
+
+export function useWorkflowSteps(id: string | null) {
+  return useQuery({
+    queryKey: ['workflow-steps', id],
+    queryFn: () => workflowClient.getWorkflowSteps({ id: id! }),
+    enabled: !!id,
+  });
+}
+
+export function useWorkflowEvents(id: string | null) {
+  return useQuery({
+    queryKey: ['workflow-events', id],
+    queryFn: () => workflowClient.getWorkflowEvents({ id: id! }),
+    enabled: !!id,
+  });
+}
+
+function invalidateWorkflowQueries(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: ['workflows'] });
+  qc.invalidateQueries({ queryKey: ['stats'] });
+}
+
+export function useCancelWorkflow() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => workflowClient.cancelWorkflow({ id }),
+    onSuccess: (_data, id) => {
+      notifications.show({ color: 'green', message: `Workflow ${id} cancelled` });
+      invalidateWorkflowQueries(qc);
+    },
+    onError: (err) => {
+      notifications.show({ color: 'red', message: `Cancel failed: ${err.message}` });
+    },
+  });
+}
+
+export function useResumeWorkflow() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => workflowClient.resumeWorkflow({ id }),
+    onSuccess: (_data, id) => {
+      notifications.show({ color: 'green', message: `Workflow ${id} resumed` });
+      invalidateWorkflowQueries(qc);
+    },
+    onError: (err) => {
+      notifications.show({ color: 'red', message: `Resume failed: ${err.message}` });
+    },
+  });
+}
+
+export function useDeleteWorkflow() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => workflowClient.deleteWorkflow({ id }),
+    onSuccess: (_data, id) => {
+      notifications.show({ color: 'green', message: `Workflow ${id} deleted` });
+      invalidateWorkflowQueries(qc);
+    },
+    onError: (err) => {
+      notifications.show({ color: 'red', message: `Delete failed: ${err.message}` });
+    },
+  });
+}

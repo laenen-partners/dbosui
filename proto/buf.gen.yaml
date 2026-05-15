@@ -1,0 +1,21 @@
+version: v2
+clean: true
+plugins:
+  # Go message types
+  - remote: buf.build/protocolbuffers/go
+    out: ../gen/go
+    opt:
+      - paths=source_relative
+  # Go Connect service stubs
+  - remote: buf.build/connectrpc/go
+    out: ../gen/go
+    opt:
+      - paths=source_relative
+  # TypeScript message + service descriptors (@bufbuild/protobuf v2).
+  # Connect-ES v2 reads the service descriptor straight out of these files,
+  # so no separate protoc-gen-connect-es step is needed.
+  - remote: buf.build/bufbuild/es
+    out: ../web/src/gen
+    opt:
+      - target=ts
+      - import_extension=js

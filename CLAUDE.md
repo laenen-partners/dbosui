@@ -2,137 +2,115 @@
 
 ## Tech stack
 
-Go + Chi (routing) + Templ (templating) + Tailwind CSS + DaisyUI (styling) + Datastar (frontend interactivity)
+### Server (Go library)
+Go 1.26 · Chi (routing) · Connect-Go (RPC) · `embed` for the SPA · urfave/cli/v3 (standalone command)
 
 Module: `github.com/laenen-partners/dbosui`
 
-Built on the [dsx](https://github.com/laenen-partners/dsx) component framework (`github.com/laenen-partners/dsx`).
+### Web SPA
+TypeScript 5 · Vite 6 · React 19 · Mantine 7 (`@mantine/core`, `form`, `hooks`, `modals`, `notifications`) + `mantine-react-table` · `@tabler/icons-react` · PostCSS + `postcss-preset-mantine` · `react-router-dom` v7 · `@tanstack/react-query` · Connect-Web (`@connectrpc/connect`, `@connectrpc/connect-web`) over Buf-generated protos (`@bufbuild/protobuf`).
 
-## Commands
+Bundle output: single SPA, served by the Go binary from the embedded `web/dist/`.
 
-- `task run` — run the admin UI (reads `.env` for `DBOS_POSTGRES_URL`)
-- `task run:mock` — run with mock data (no database)
-- `task build` — build binary to `bin/dbosui`
-- `task generate` — generate Go code from `.templ` files
-- `task format` — format Go + templ files
-- `task lint` — lint Go code
-- `task test` — run tests
-- `task live` — live reload (templ watch + air)
+## Commands (via mise)
+
+- `mise run setup` — `go mod download` + `pnpm --dir web install`
+- `mise run generate` — `buf generate` (regen Connect-Go + Connect-ES from `proto/`)
+- `mise run web:dev` — Vite dev server with HMR; proxies `/api` to `:8080`
+- `mise run web:build` — build SPA into `web/dist/`
+- `mise run build` — build Go binary with SPA embedded (depends on `web:build`)
+- `mise run run` — run admin UI against `$DATABASE_URL` / `$DBOS_POSTGRES_URL` from `.env`
+- `mise run run:mock` — run with in-memory mock data
+- `mise run format` / `lint` / `test`
+
+Tool versions are pinned in `mise.toml`. Tasks are defined in `mise.yaml`.
 
 ## Project structure
 
 ```
-client.go           — Client interface, types (WorkflowInfo, StepInfo, EventInfo, etc.), MockClient
-dbos_client.go      — Real DBOS client (dbos.NewClient + pgxpool for direct SQL)
-dbosui.go           — Public API: Handler() (embeddable) and Run() (standalone showcase)
-handlers.go         — HTTP handlers: list, stats, detail, steps, cancel, resume
-helpers.go          — Formatting helpers (time, JSON pretty-print, base64 decode)
-page.templ          — Page templates: ShowcasePage, AdminPage, workflowsContent
-fragments.templ     — SSE fragment components: StatsBar, WorkflowTableBody, DetailContent, etc.
-cmd/dbosui/main.go  — CLI entry point with .env loading and flags
+proto/dbosui/v1/workflows.proto       — Connect service definition (source of truth)
+proto/buf.yaml, proto/buf.gen.yaml    — Buf config; emits Go + TS code
+
+gen/go/dbosui/v1/                     — Generated Go message + Connect handler/client stubs
+
+web/                                  — SPA source
+  index.html                          — has <base href="/" /> which is rewritten at serve time
+  vite.config.ts                      — base: './' so assets resolve under any mount path
+  src/main.tsx                        — Mantine, QueryClient, BrowserRouter providers
+  src/App.tsx                         — AppShell + routes
+  src/api/client.ts                   — Connect-Web transport (baseUrl derived from <base href>)
+  src/api/queries.ts                  — React Query hooks (list, detail, stats, mutations)
+  src/lib/format.ts                   — status enum maps, JSON pretty-print, timestamp helpers
+  src/pages/WorkflowsPage.tsx         — list (mantine-react-table) + drawer trigger
+  src/components/StatsBar.tsx         — top tiles
+  src/components/WorkflowDetail.tsx   — detail drawer body + action buttons
+  src/gen/dbosui/v1/workflows_pb.ts   — generated; Connect-ES v2 reads GenService from here
+  dist/                               — vite build output, embedded by Go (kept .gitkeep'd)
+
+client.go                             — Client interface + WorkflowInfo/StepInfo/EventInfo/MockClient
+dbos_client.go                        — Real DBOS client (dbos.NewClient + pgxpool)
+service.go                            — Connect-Go WorkflowService implementation
+helpers.go                            — base64 decode for DBOS-stored values
+dbosui.go                             — Config + Handler(): chi router, /api mount + SPA
+embed.go                              — go:embed all:web/dist
+cmd/dbosui/main.go                    — urfave/cli/v3 entrypoint (`dbosui serve`)
 ```
 
-## How the UI works
+## How requests flow
 
-This project uses the dsx framework's patterns. Key concepts:
+1. SPA loads from `Handler()` at `cfg.BasePath` (default `/`). `index.html` is served with `<base href>` rewritten to the configured base path.
+2. SPA derives the API URL from `document.baseURI` + `/api`. With Connect-Web that produces a POST against `…/api/dbosui.v1.WorkflowService/<Method>`.
+3. Chi routes `/api/*` to `dbosuiv1connect.NewWorkflowServiceHandler(...)`.
+4. `workflowService` (in `service.go`) implements `WorkflowServiceHandler` by delegating to the `Client` interface — same surface as before.
+5. Mutations on the SPA invalidate React Query caches (`['workflows']`, `['stats']`, …) so the list and stats bar refresh automatically.
 
-1. **SSE fragments**: Handlers return HTML fragments via `ds.Send.Patch(sse, component)`. The browser's Datastar runtime patches the DOM.
-2. **Signals**: Client-side state managed by Datastar signals (e.g. `wf_filter` namespace with status, name, page, refresh).
-3. **Drawer**: Workflow details open in a slide-in drawer via `ds.Send.Drawer(sse, component)`. An expand icon toggles full-width via CSS class toggle.
-4. **Auto-refresh**: Uses `data-effect` to set up `setInterval` that clicks a hidden refresh button.
+## Adding a new RPC
 
-## Datastar attribute syntax (Datastar v1.0.0-RC.7)
+1. Add the message + RPC to `proto/dbosui/v1/workflows.proto`.
+2. Run `mise run generate` — produces Go stubs in `gen/go/...` and TS in `web/src/gen/...`.
+3. Implement the method in `service.go` (delegating to `Client` if it's a new backend capability — in which case add to the interface in `client.go`, `dbos_client.go`, and `mockClient`).
+4. Add a React Query hook in `web/src/api/queries.ts`.
+5. Use it in a component. Mutations should `notifications.show` on success/error and `qc.invalidateQueries` to refresh affected queries.
 
-**Critical**: This project uses Datastar RC.7 which has specific syntax rules:
+## Public API
 
-- **Colon notation**: `data-on:click`, `data-bind:ns.field`, `data-show`
-- **Modifier separator**: Double underscore `__`, NOT dot. Example: `data-on:input__debounce.300ms`
-- **Modifier values**: Dot-separated after modifier name. Example: `__throttle.500ms`
-- **Actions**: `@get('/url')`, `@post('/url')` — POST auto-includes CSRF token
-- **Signal references**: `$namespace.field` (e.g. `$wf_filter.status`)
-- **Multiple statements**: Semicolon-separated: `$wf_filter.page = 0; @get('/url')`
+The Go package exposes three levels of reuse so consumers can opt in to as much or as little of the bundled UI as they want:
 
-Use dsx helpers instead of raw attributes:
+1. **`Client` interface** (`client.go`) — the abstract data layer. Implement it for a custom backend, or use:
+   - `dbosui.NewDBOSClient(ctx, dsn)` — backed by the official DBOS Go SDK + a `pgxpool`
+   - `dbosui.MockClient()` — in-memory sample data
+   A consumer who wants to build a completely different UI (CLI, TUI, custom HTML, another framework) can depend on just this — no HTTP, no Connect, no SPA.
+2. **`APIHandler(client, opts...)`** (`dbosui.go`) — returns `(path, http.Handler)` for the Connect-Go `WorkflowService` only. Mount this in your own router if you want the wire API but ship your own frontend. The proto in `proto/dbosui/v1/workflows.proto` is the contract — generate clients for any language with `buf`.
+3. **`Handler(Config)`** (`dbosui.go`) — full admin UI: API + embedded SPA. The default. `BasePath` is required when mounting under a prefix so the SPA's `<base href>`, React Router, and Connect transport all resolve correctly.
+
+### Embedding the full UI
+
 ```go
-ds.On("click", expr)                    // data-on:click="expr"
-ds.On("input__debounce.300ms", expr)    // data-on:input__debounce.300ms="expr"
-ds.Bind("wf_filter", "status")         // data-bind:wf_filter.status
-ds.Show(expr)                           // data-show="expr"
-ds.Init(ds.Get(url))                    // data-init="@get('/url')"
-ds.Effect(expr)                         // data-effect="expr"
-ds.OnClick(expr)                        // data-on:click="expr"
+r := chi.NewRouter()
+r.Mount("/dbos", dbosui.Handler(dbosui.Config{
+    Client:   myDBOSClient,
+    BasePath: "/dbos",
+}))
 ```
 
-## Signal reading in handlers
-
-`ds.ReadSignals` reads signals from both GET (`?datastar=` query param) and POST (request body). **Must be called before `datastar.NewSSE(w, r)`** — SSE creation consumes the body.
+### Embedding the API only
 
 ```go
-func (h *workflowHandlers) list() http.HandlerFunc {
-    return func(w http.ResponseWriter, r *http.Request) {
-        var signals filterSignals
-        _ = ds.ReadSignals("wf_filter", r, &signals) // before NewSSE!
-        // ... build filter from signals ...
-        sse := datastar.NewSSE(w, r)
-        _ = ds.Send.Patch(sse, WorkflowTableBody(result.Workflows, ...))
-    }
-}
+path, api := dbosui.APIHandler(myDBOSClient)
+mux.Handle("/api"+path, http.StripPrefix("/api", api))
 ```
 
 ## DBOS system database
 
-The DBOS system database uses schema `dbos` with these key tables:
+Same as before — schema `dbos`, key tables `workflow_status`, `operation_outputs`, `workflow_events`, `notifications`. Timestamps are epoch-ms (`BIGINT`), values are base64-encoded JSON. `dbos_client.go` mixes the official `dbos.Client` with a `pgxpool` for queries the SDK doesn't expose (substring `name` search, listing `workflow_events`).
 
-- `dbos.workflow_status` — main workflow table (workflow_uuid, status, name, created_at as epoch ms, etc.)
-- `dbos.operation_outputs` — step outputs (workflow_uuid, function_id, function_name, output, error)
-- `dbos.workflow_events` — events set via `dbos.SetEvent` (workflow_uuid, key, value)
-- `dbos.notifications` — signals sent via `dbos.Send` (destination_uuid, topic, message)
-
-**Timestamps** are stored as `BIGINT` epoch milliseconds, not `TIMESTAMP`. Convert with `time.UnixMilli(ms)`.
-
-**Values** (input, output, events) are stored as base64-encoded JSON strings. Decode with `base64.StdEncoding.DecodeString` then `json.Unmarshal`.
-
-The `DBOSClient` uses:
-- `dbos.Client` (official SDK) for standard operations (list, cancel, resume, get steps)
-- `pgxpool.Pool` (direct SQL) for queries the SDK doesn't support (name substring search with ILIKE, listing workflow_events)
+`Input`/`Output` are passed to the SPA as raw strings (the field is `*_json` on the proto). The SPA in `lib/format.ts` tries base64-decode → JSON-parse → pretty-print at render time, falling back to the raw string.
 
 ## Rules
 
-- **Wrap errors**: `fmt.Errorf("context: %w", err)`
-- **No custom CSS/JS** — use DaisyUI classes + Datastar only
-- **Use theme tokens** — no hardcoded colours
-- **Run `go tool templ fmt` then `go tool templ generate`** after editing `.templ` files, before committing
-- **Drawer expand** uses pure CSS class toggle (`max-w-lg` ↔ `max-w-full`) via JS on the drawer panel element — no server round-trip
-- **DBOS SDK `WithName` does exact match** — for substring name search, query the DB directly with `ILIKE`
-- **dsx patterns**: follow the dsx showcase patterns for handlers (SSE patch), forms (form.Handler), and reactive updates (stream.Watch)
-
-## Key types
-
-```go
-// Client interface — implement for custom backends
-type Client interface {
-    ListWorkflows(ctx context.Context, filter ListFilter) (*ListResult, error)
-    GetWorkflow(ctx context.Context, id string) (*WorkflowInfo, error)
-    GetWorkflowSteps(ctx context.Context, id string) ([]StepInfo, error)
-    GetWorkflowEvents(ctx context.Context, id string) ([]EventInfo, error)
-    CancelWorkflow(ctx context.Context, id string) error
-    ResumeWorkflow(ctx context.Context, id string) error
-}
-
-// filterSignals — Datastar signals for the workflow filter form
-type filterSignals struct {
-    Status  string `json:"status"`
-    Name    string `json:"name"`
-    Page    int    `json:"page"`
-    Refresh int    `json:"refresh"` // auto-refresh interval in ms, 0=off
-}
-```
-
-## Adding new features
-
-1. Add types to `client.go` if needed
-2. Implement the backend in `dbos_client.go` (and `MockClient` for testing)
-3. Add HTTP handler in `handlers.go`
-4. Register route in `dbosui.go` (both `Handler()` and `Run()` paths)
-5. Add templ component in `fragments.templ` (SSE fragment) or `page.templ` (page-level)
-6. Run `go tool templ generate` and `go build ./...`
+- **Wrap errors**: `fmt.Errorf("context: %w", err)`.
+- **Edit `.proto` is the source of truth** — never hand-edit generated files in `gen/` or `web/src/gen/`. After `.proto` changes, run `mise run generate`.
+- **No custom CSS** — use Mantine components and theme tokens. PostCSS is configured with `postcss-preset-mantine`.
+- **Mantine v7 + react-router-dom v7** — both are pinned majors; bumps need a deliberate review.
+- **Connect-ES v2** — service descriptors live in `workflows_pb.ts` (`GenService`). There is no separate `_connect.ts` file in this project; `createClient(WorkflowService, transport)` consumes the descriptor directly.
+- **SPA build output must exist for `go build`**: `go:embed all:web/dist` requires at least `.gitkeep`. CI should run `pnpm --dir web build` before `go build` for a production binary.

@@ -1,0 +1,138 @@
+syntax = "proto3";
+
+package dbosui.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/laenen-partners/dbosui/gen/go/dbosui/v1;dbosuiv1";
+
+enum WorkflowStatus {
+  WORKFLOW_STATUS_UNSPECIFIED = 0;
+  WORKFLOW_STATUS_PENDING = 1;
+  WORKFLOW_STATUS_ENQUEUED = 2;
+  WORKFLOW_STATUS_SUCCESS = 3;
+  WORKFLOW_STATUS_ERROR = 4;
+  WORKFLOW_STATUS_CANCELLED = 5;
+  WORKFLOW_STATUS_MAX_RETRIES_EXCEEDED = 6;
+}
+
+message Workflow {
+  string id = 1;
+  WorkflowStatus status = 2;
+  string name = 3;
+  string authenticated_user = 4;
+  // JSON-encoded input as stored by DBOS.
+  string input_json = 5;
+  // JSON-encoded output as stored by DBOS.
+  string output_json = 6;
+  string error = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+  string application_version = 10;
+  string application_id = 11;
+  string queue_name = 12;
+  int32 attempts = 13;
+  string executor_id = 14;
+}
+
+message Step {
+  int32 step_id = 1;
+  string name = 2;
+  string output_json = 3;
+  string error = 4;
+}
+
+message Event {
+  string key = 1;
+  string value = 2;
+}
+
+message Stats {
+  int32 total = 1;
+  int32 pending = 2;
+  int32 success = 3;
+  int32 failed = 4;
+  int32 cancelled = 5;
+}
+
+message ListWorkflowsRequest {
+  repeated WorkflowStatus statuses = 1;
+  string name = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+  bool sort_desc = 5;
+  string user = 6;
+  string id_prefix = 7;
+}
+
+message ListWorkflowsResponse {
+  repeated Workflow workflows = 1;
+  int32 total = 2;
+}
+
+message GetWorkflowRequest {
+  string id = 1;
+}
+
+message GetWorkflowResponse {
+  Workflow workflow = 1;
+}
+
+message GetWorkflowStepsRequest {
+  string id = 1;
+}
+
+message GetWorkflowStepsResponse {
+  repeated Step steps = 1;
+}
+
+message GetWorkflowEventsRequest {
+  string id = 1;
+}
+
+message GetWorkflowEventsResponse {
+  repeated Event events = 1;
+}
+
+message GetStatsRequest {}
+
+message GetStatsResponse {
+  Stats stats = 1;
+}
+
+message CancelWorkflowRequest {
+  string id = 1;
+}
+
+message CancelWorkflowResponse {}
+
+message ResumeWorkflowRequest {
+  string id = 1;
+}
+
+message ResumeWorkflowResponse {}
+
+message DeleteWorkflowRequest {
+  string id = 1;
+}
+
+message DeleteWorkflowResponse {}
+
+message ListWorkflowNamesRequest {}
+
+message ListWorkflowNamesResponse {
+  // Distinct workflow names known to the system, sorted alphabetically.
+  repeated string names = 1;
+}
+
+service WorkflowService {
+  rpc ListWorkflows(ListWorkflowsRequest) returns (ListWorkflowsResponse);
+  rpc GetWorkflow(GetWorkflowRequest) returns (GetWorkflowResponse);
+  rpc GetWorkflowSteps(GetWorkflowStepsRequest) returns (GetWorkflowStepsResponse);
+  rpc GetWorkflowEvents(GetWorkflowEventsRequest) returns (GetWorkflowEventsResponse);
+  rpc GetStats(GetStatsRequest) returns (GetStatsResponse);
+  rpc ListWorkflowNames(ListWorkflowNamesRequest) returns (ListWorkflowNamesResponse);
+  rpc CancelWorkflow(CancelWorkflowRequest) returns (CancelWorkflowResponse);
+  rpc ResumeWorkflow(ResumeWorkflowRequest) returns (ResumeWorkflowResponse);
+  rpc DeleteWorkflow(DeleteWorkflowRequest) returns (DeleteWorkflowResponse);
+}

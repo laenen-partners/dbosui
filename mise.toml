@@ -1,6 +1,143 @@
 [tools]
 go = "1.26.1"
+node = "22.17.0"
+pnpm = "10.28.2"
+buf = "1.59.0"
+air = "1.62.0"
 "golangci-lint" = "2.11.2"
 "gotestsum" = "1.13.0"
-"task" = "3.49.1"
 "gofumpt" = "0.9.2"
+
+[env]
+_.file = ".env"
+
+# ── Setup ────────────────────────────────────────────────────────────────────
+
+[tasks.setup]
+description = "Install Go + web dependencies"
+run = [
+  "go mod download",
+  "pnpm --dir web install",
+]
+
+[tasks.generate]
+description = "Regenerate Connect-Go and Connect-ES code from proto"
+sources = ["proto/**/*.proto", "proto/buf.gen.yaml"]
+outputs = ["gen/go/**/*.go", "web/src/gen/**/*.ts"]
+run = "cd proto && buf generate"
+
+# ── Build / run ──────────────────────────────────────────────────────────────
+
+[tasks."web:dev"]
+description = "Run the SPA dev server with HMR (proxies /api → :8080)"
+dir = "{{config_root}}/web"
+run = "pnpm dev"
+
+[tasks."web:build"]
+description = "Build the SPA into web/dist/ for embedding"
+dir = "{{config_root}}/web"
+sources = [
+  "src/**/*",
+  "package.json",
+  "vite.config.ts",
+  "tsconfig*.json",
+  "index.html",
+]
+outputs = ["dist/**/*"]
+run = "pnpm build"
+
+[tasks."web:typecheck"]
+description = "TypeScript noEmit check"
+dir = "{{config_root}}/web"
+run = "pnpm typecheck"
+
+[tasks."go:dev"]
+description = "Run the Go API with air (auto-rebuild on .go changes, mock data)"
+run = "air"
+
+[tasks."go:dev:db"]
+description = "Run the Go API with air against the real DB (DBOS_POSTGRES_URL / DATABASE_URL)"
+run = "air -c .air.db.toml"
+
+[tasks.dev]
+description = "Live-reload: Vite HMR + Go API (mock data)"
+run = """
+set -euo pipefail
+trap 'kill 0' EXIT INT TERM
+mise run go:dev &
+mise run web:dev &
+wait
+"""
+
+[tasks."dev:db"]
+description = "Live-reload: Vite HMR + Go API against DBOS_POSTGRES_URL / DATABASE_URL"
+run = """
+set -euo pipefail
+trap 'kill 0' EXIT INT TERM
+mise run go:dev:db &
+mise run web:dev &
+wait
+"""
+
+[tasks.build]
+description = "Build the Go binary with the SPA embedded"
+depends = ["web:build"]
+run = "go build -o bin/dbosui ./cmd/dbosui"
+
+[tasks.run]
+description = "Run the admin UI (reads DATABASE_URL/DBOS_POSTGRES_URL from .env)"
+depends = ["web:build"]
+run = "go run ./cmd/dbosui serve"
+
+[tasks."run:mock"]
+description = "Run with mock data"
+depends = ["web:build"]
+run = "go run ./cmd/dbosui serve --mock"
+
+# ── Quality gates ────────────────────────────────────────────────────────────
+
+[tasks.format]
+description = "Format Go files"
+run = "gofumpt -l -w ."
+
+[tasks.lint]
+description = "Lint Go code"
+run = "golangci-lint run"
+
+[tasks.test]
+description = "Run Go tests"
+run = "go test ./..."
+
+[tasks.ci]
+description = "Full validation pipeline (used by CI)"
+run = [
+  "go mod download",
+  "pnpm --dir web install --frozen-lockfile",
+  "golangci-lint run",
+  "mise run web:typecheck",
+  "mise run web:build",
+  "go vet ./...",
+  "go test ./...",
+  "go build ./...",
+]
+
+# ── Release ──────────────────────────────────────────────────────────────────
+
+[tasks."release:dist"]
+description = "Cross-compile release binaries into dist/ (with SPA embedded)"
+depends = ["web:build"]
+run = """
+set -euo pipefail
+mkdir -p dist
+VERSION="${VERSION:-dev}"
+for target in "linux/amd64" "linux/arm64" "darwin/amd64" "darwin/arm64" "windows/amd64"; do
+  os="${target%/*}"; arch="${target##*/}"
+  ext=""
+  if [ "$os" = "windows" ]; then ext=".exe"; fi
+  out="dist/dbosui_${VERSION}_${os}_${arch}${ext}"
+  echo "→ $out"
+  GOOS=$os GOARCH=$arch go build \\
+    -ldflags "-s -w -X main.version=$VERSION" \\
+    -o "$out" ./cmd/dbosui
+done
+"""

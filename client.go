@@ -89,6 +89,7 @@ type Stats struct {
 // Implement this interface using the DBOS Go client or direct SQL (sqlc).
 type Client interface {
 	ListWorkflows(ctx context.Context, filter ListFilter) (*ListResult, error)
+	ListWorkflowNames(ctx context.Context) ([]string, error)
 	GetWorkflow(ctx context.Context, id string) (*WorkflowInfo, error)
 	GetWorkflowSteps(ctx context.Context, id string) ([]StepInfo, error)
 	GetWorkflowEvents(ctx context.Context, id string) ([]EventInfo, error)
@@ -201,6 +202,19 @@ func (m *mockClient) ListWorkflows(_ context.Context, filter ListFilter) (*ListR
 	filtered = filtered[offset:end]
 
 	return &ListResult{Workflows: filtered, Total: total}, nil
+}
+
+func (m *mockClient) ListWorkflowNames(_ context.Context) ([]string, error) {
+	seen := make(map[string]struct{}, len(m.workflows))
+	for _, wf := range m.workflows {
+		seen[wf.Name] = struct{}{}
+	}
+	names := make([]string, 0, len(seen))
+	for n := range seen {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+	return names, nil
 }
 
 func (m *mockClient) GetWorkflow(_ context.Context, id string) (*WorkflowInfo, error) {

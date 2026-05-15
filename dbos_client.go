@@ -173,6 +173,31 @@ func (c *DBOSClient) listWorkflowsByName(ctx context.Context, filter ListFilter)
 	return &ListResult{Workflows: workflows, Total: total}, nil
 }
 
+// ListWorkflowNames returns the set of distinct workflow names in the system,
+// sorted alphabetically. Used to populate the "filter by workflow type"
+// dropdown in the UI.
+func (c *DBOSClient) ListWorkflowNames(ctx context.Context) ([]string, error) {
+	query := fmt.Sprintf(
+		"SELECT DISTINCT name FROM %s.workflow_status WHERE name <> '' ORDER BY name",
+		c.schema,
+	)
+	rows, err := c.pool.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("dbosui: query workflow names: %w", err)
+	}
+	defer rows.Close()
+
+	var names []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, fmt.Errorf("dbosui: scan workflow name: %w", err)
+		}
+		names = append(names, name)
+	}
+	return names, nil
+}
+
 func (c *DBOSClient) GetWorkflow(ctx context.Context, id string) (*WorkflowInfo, error) {
 	workflows, err := c.client.ListWorkflows(
 		dbos.WithWorkflowIDs([]string{id}),

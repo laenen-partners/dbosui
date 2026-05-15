@@ -1,0 +1,86 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g. v1.0.0)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate version format
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]]; then
+            echo "::error::version must look like v1.2.3 or v1.2.3-rc1"
+            exit 1
+          fi
+          if git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "::error::tag $VERSION already exists"
+            exit 1
+          fi
+
+      - name: Install mise
+        uses: jdx/mise-action@v2
+        with:
+          install: true
+          cache: true
+
+      - name: Build SPA
+        run: |
+          pnpm --dir web install --frozen-lockfile
+          mise run web:build
+
+      - name: Run validation
+        run: |
+          go vet ./...
+          go test ./...
+          mise run web:typecheck
+
+      - name: Create release commit + tag (detached, so main stays clean)
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --detach
+          # Force-add web/dist (it is gitignored on main but must be present
+          # in the tagged commit so `go get` consumers can embed the SPA).
+          git add -f web/dist
+          git commit -m "release: $VERSION
+
+          Includes built SPA in web/dist/ so consumers of the Go module
+          don't need pnpm to compile the embed directive."
+          git tag -a "$VERSION" -m "$VERSION"
+          git push origin "$VERSION"
+
+      - name: Build cross-platform binaries
+        env:
+          VERSION: ${{ inputs.version }}
+        run: mise run release:dist
+
+      - name: Generate checksums
+        run: cd dist && sha256sum dbosui_* > checksums.txt
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.version }}
+          name: ${{ inputs.version }}
+          generate_release_notes: true
+          files: |
+            dist/dbosui_*
+            dist/checksums.txt

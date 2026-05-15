@@ -1,8 +1,8 @@
 # dbosui
 
-Admin UI for [DBOS](https://dbos.dev) workflows, built with the [dsx](https://github.com/laenen-partners/dsx) component framework.
+Admin UI for [DBOS](https://dbos.dev) workflows. A Go library that exposes a [Connect-Go](https://connectrpc.com/) RPC API and an embedded React + Mantine SPA, plus a standalone `dbosui serve` command.
 
-Browse, filter, inspect, and manage DBOS workflow executions from a web dashboard. Connects to the DBOS system database via the official Go client or direct SQL queries.
+Browse, filter, inspect, cancel, resume, and delete DBOS workflow executions from a web dashboard. Connects to the DBOS system database via the official Go client and direct SQL.
 
 ![overview](./docs/ui-overview.png)
 ![detail](./docs/ui-detail.png)
@@ -10,71 +10,97 @@ Browse, filter, inspect, and manage DBOS workflow executions from a web dashboar
 
 ## Features
 
-- **Workflow list** with status filtering, name search (substring, debounced), and pagination
-- **Stats bar** showing total, pending, success, failed, and cancelled counts
-- **Detail drawer** with full workflow metadata, input/output JSON, execution steps, and events (`dbos.SetEvent` data)
-- **Expand drawer** to full-page width via icon toggle
-- **Auto-refresh** with configurable interval (1s / 5s / 10s / 30s / 1min)
-- **Cancel and resume** workflow actions
-- **Base64 decoding** of DBOS-encoded values (input, output, events)
-- **Two deployment modes**: standalone command or embeddable handler
+- **Workflow list** with status filter, substring name search, server-side pagination & sorting (`mantine-react-table`)
+- **Stats bar** — total / pending / success / failed / cancelled
+- **Detail drawer** — metadata, input/output JSON, execution steps, and `dbos.SetEvent` events
+- **Actions** — cancel, resume, delete (with confirm modals + toast notifications)
+- **Base64 decoding** of DBOS-encoded values, displayed as pretty-printed JSON
+- **Two deployment modes** — standalone binary or embeddable `http.Handler`
+- **Three reuse levels** — `Client` interface, Connect API only, or full UI
+
+## Stack
+
+| Layer            | Choice                                                                                |
+| ---------------- | ------------------------------------------------------------------------------------- |
+| Server (lib)     | Go 1.26 · Chi · Connect-Go · `embed`                                                  |
+| Standalone CLI   | `urfave/cli/v3`                                                                       |
+| Wire format      | Connect (Protobuf over HTTP) — schema in `proto/dbosui/v1/workflows.proto`            |
+| Web framework    | React 19 · TypeScript 5 · Vite 6                                                      |
+| UI components    | Mantine 7 (`core`, `form`, `hooks`, `modals`, `notifications`) + `mantine-react-table` |
+| Icons            | `@tabler/icons-react`                                                                 |
+| Routing          | `react-router-dom` v7                                                                 |
+| Server cache     | `@tanstack/react-query`                                                               |
+| Transport        | Connect-Web (`@connectrpc/connect`, `@connectrpc/connect-web`) + `@bufbuild/protobuf` |
 
 ## Quick start
 
 ### Prerequisites
 
 - [Go 1.26+](https://go.dev/dl/)
-- [mise](https://mise.jdx.dev/) (optional, manages tool versions)
-- [Task](https://taskfile.dev/) (task runner)
-- A running DBOS application with a PostgreSQL system database
+- [Node 22+](https://nodejs.org) and [pnpm](https://pnpm.io)
+- [Buf](https://buf.build) (only needed when regenerating from `.proto`)
+- [mise](https://mise.jdx.dev/) — recommended, pins all of the above
 
 ### Setup
 
 ```bash
-mise install          # install tool versions (optional)
-task setup            # download Go dependencies
-cp .env.example .env  # configure database URL
+mise install            # install Go, Node, pnpm, buf
+mise run setup          # go mod download + pnpm install in web/
+cp .env.example .env    # configure database URL
 ```
 
-Edit `.env` and set your DBOS database URL:
+Edit `.env`:
 
 ```
-DBOS_POSTGRES_URL=postgresql://user:password@localhost:5432/mydb?sslmode=disable
+DATABASE_URL=postgresql://user:password@localhost:5432/mydb?sslmode=disable
+# DBOS_POSTGRES_URL is also recognised
 ```
 
 ### Run
 
 ```bash
-# With real DBOS database
-task run
+# Real DBOS database
+mise run run
 
-# With mock data (no database needed)
-task run:mock
+# Mock data (no database)
+mise run run:mock
 
-# Directly with go run
-go run ./cmd/dbosui --port 8080
-
-# Build binary
-task build
-./bin/dbosui --port 8080
+# Build a release binary (SPA embedded)
+mise run build
+./bin/dbosui serve --port 8080
 ```
 
-The UI is available at `http://localhost:8080` (or the configured port).
+The UI is available at `http://localhost:8080`.
 
-### Development
+### Develop
+
+Frontend HMR + Go backend on the same port:
 
 ```bash
-task live              # live reload with templ watch + air
-task format            # format Go + templ files
-task lint              # run golangci-lint
-task test              # run tests
+# Terminal 1: Go API with mock data on :8080
+mise run run:mock
+
+# Terminal 2: Vite dev server on :5173 (proxies /api → :8080)
+mise run web:dev
+```
+
+Open http://localhost:5173.
+
+Other tasks:
+
+```bash
+mise run generate       # regen Connect-Go + Connect-ES from proto/
+mise run web:build      # build SPA into web/dist (required for go build)
+mise run format         # gofumpt
+mise run lint           # golangci-lint
+mise run test           # go test ./...
 ```
 
 ## Embedding in your application
 
-The admin UI can be mounted as a handler in an existing application.
+The library offers three levels of reuse:
 
-### Chi
+### 1. Full UI (API + SPA)
 
 ```go
 import "github.com/laenen-partners/dbosui"
@@ -89,21 +115,18 @@ r.Mount("/admin", dbosui.Handler(dbosui.Config{
 }))
 ```
 
-### Gin
+`BasePath` is required when mounting under a prefix — it is injected into the SPA's `<base href>` so router and asset URLs resolve correctly.
+
+### 2. Connect API only (bring your own UI)
 
 ```go
-import "github.com/laenen-partners/dbosui"
-
-h := dbosui.Handler(dbosui.Config{
-    Client:   client,
-    BasePath: "/admin",
-})
-ginRouter.Any("/admin/*path", gin.WrapH(h))
+path, api := dbosui.APIHandler(client)
+mux.Handle("/api"+path, http.StripPrefix("/api", api))
 ```
 
-### Custom client
+The wire format is the same Connect service the bundled SPA uses. Generate clients in any language with `buf` against `proto/dbosui/v1/workflows.proto`.
 
-Implement the `Client` interface to use a custom data source (e.g. sqlc, DBOS Cloud API):
+### 3. `Client` interface only (no HTTP)
 
 ```go
 type Client interface {
@@ -113,70 +136,94 @@ type Client interface {
     GetWorkflowEvents(ctx context.Context, id string) ([]EventInfo, error)
     CancelWorkflow(ctx context.Context, id string) error
     ResumeWorkflow(ctx context.Context, id string) error
+    DeleteWorkflow(ctx context.Context, id string) error
 }
+```
+
+Use `dbosui.NewDBOSClient(ctx, dsn)` for the real backend, `dbosui.MockClient()` for tests, or implement it against a custom data source (sqlc, DBOS Cloud API, etc.) and consume directly — no HTTP, no Connect, no SPA required.
+
+### Gin example
+
+```go
+h := dbosui.Handler(dbosui.Config{Client: client, BasePath: "/admin"})
+ginRouter.Any("/admin/*path", gin.WrapH(h))
 ```
 
 ## Architecture
 
 ```
-dbosui/
-├── client.go           Client interface, types, MockClient
-├── dbos_client.go      DBOS Go client + pgxpool implementation
-├── dbosui.go           Handler() and Run() entry points
-├── handlers.go         HTTP handlers (list, stats, detail, steps, cancel, resume)
-├── helpers.go          Formatting (time, JSON, base64 decode)
-├── page.templ          Page layouts (showcase + standalone)
-├── fragments.templ     SSE fragment components (table, stats, detail, pagination)
-├── cmd/dbosui/
-│   └── main.go         CLI entry point (.env loading, flags)
-├── Taskfile.yaml       Build/dev tasks
-├── mise.toml           Tool versions
-└── .env.example        Environment config template
+proto/dbosui/v1/workflows.proto    Connect service definition (source of truth)
+proto/buf.{yaml,gen.yaml}          Buf config; emits Go + TS
+
+gen/go/dbosui/v1/                  Generated Go message + Connect handler/client stubs
+
+client.go                          Client interface, WorkflowInfo/StepInfo/EventInfo, MockClient
+dbos_client.go                     Real DBOS client (dbos.NewClient + pgxpool)
+service.go                         Connect-Go WorkflowService backed by Client
+dbosui.go                          Config, Handler() (API + SPA), APIHandler() (API only)
+embed.go                           go:embed all:web/dist
+helpers.go                         base64 decode for DBOS-stored values
+cmd/dbosui/main.go                 urfave/cli/v3 entrypoint (dbosui serve …)
+
+web/                               React SPA
+├── index.html                     <base href> rewritten at serve time
+├── vite.config.ts                 base: './' so assets work under any mount path
+├── src/api/{client,queries}.ts    Connect-Web transport + React Query hooks
+├── src/lib/format.ts              status enum maps, JSON pretty-print, timestamps
+├── src/pages/WorkflowsPage.tsx    list (mantine-react-table) + drawer trigger
+├── src/components/                StatsBar, WorkflowDetail
+├── src/gen/dbosui/v1/             generated (Connect-ES v2)
+└── dist/                          vite build output (embedded by Go)
 ```
 
-### How it works
+### Request flow
 
-The UI uses [dsx](https://github.com/laenen-partners/dsx) which is built on:
-
-- **[Chi](https://github.com/go-chi/chi)** for HTTP routing
-- **[Templ](https://templ.guide)** for type-safe HTML templates
-- **[Datastar](https://data-star.dev)** for reactive frontend (SSE-driven, no JavaScript framework)
-- **[DaisyUI](https://daisyui.com)** + Tailwind CSS for styling
-
-Page loads trigger `@get` calls via Datastar, which hit Go handlers that return SSE patches. The handlers query DBOS via the `Client` interface and render templ components as HTML fragments.
-
-### Data flow
-
-1. Browser loads page with Datastar signals and `data-init` triggers
-2. Datastar sends `@get` requests with signals as `?datastar=` query param
-3. Go handler reads signals via `ds.ReadSignals`, queries DBOS, renders templ component
-4. Handler responds with SSE `datastar-patch-elements` event
-5. Datastar patches the DOM with the HTML fragment
-6. Filter changes (status dropdown, name input) update signals and re-trigger `@get`
-7. Auto-refresh uses `setInterval` to periodically click a hidden refresh trigger
+1. SPA loads from `Handler()` at `cfg.BasePath`. `index.html` is served with `<base href>` rewritten to the configured base path.
+2. SPA derives the API URL from `document.baseURI` + `/api`. Connect-Web posts to `…/api/dbosui.v1.WorkflowService/<Method>`.
+3. Chi routes `/api/*` to the Connect-Go handler.
+4. `workflowService` (in `service.go`) implements `WorkflowServiceHandler` by delegating to the `Client` interface.
+5. Mutations on the SPA invalidate the relevant React Query caches so the list and stats bar refresh automatically.
 
 ### DBOS connection
 
-The `DBOSClient` uses two connections:
+`DBOSClient` mixes two sources:
 
 - **`dbos.Client`** (official Go SDK) for `ListWorkflows`, `GetWorkflowSteps`, `CancelWorkflow`, `ResumeWorkflow`
-- **`pgxpool.Pool`** (direct SQL) for name substring search (`ILIKE`) and `workflow_events` queries that the SDK doesn't expose
+- **`pgxpool.Pool`** (direct SQL) for substring name search (`ILIKE`) and `workflow_events` queries that the SDK doesn't expose
 
-Both share the same connection pool via `ClientConfig.SystemDBPool`.
+Both share the same `SystemDBPool`. Input/output values are stored as base64-encoded JSON by DBOS; they're forwarded raw to the SPA, which decodes and pretty-prints in `src/lib/format.ts`.
 
 ## Configuration
 
-| Environment variable | Description | Default |
-|---|---|---|
-| `DBOS_POSTGRES_URL` | PostgreSQL connection string for the DBOS system database | (required unless `--mock`) |
-| `PORT` | HTTP server port | `8080` |
+| Environment variable                | Description                                  | Default                |
+| ----------------------------------- | -------------------------------------------- | ---------------------- |
+| `DATABASE_URL` / `DBOS_POSTGRES_URL` | Postgres connection string for the DBOS sys DB | (required unless `--mock`) |
+| `PORT`                              | HTTP server port                             | `8080`                 |
 
-CLI flags:
+CLI flags (`dbosui serve --help`):
 
-| Flag | Description |
-|---|---|
-| `--port` | HTTP server port (overridden by `PORT` env var) |
-| `--mock` | Use mock data instead of a real database |
+| Flag             | Description                                                |
+| ---------------- | ---------------------------------------------------------- |
+| `--port` / `-p`  | TCP port to listen on (env `PORT`)                         |
+| `--database-url` | Postgres URL (env `DATABASE_URL` / `DBOS_POSTGRES_URL`)    |
+| `--base-path`    | URL prefix the UI is served under (default `/`)            |
+| `--mock`         | Serve mock data instead of connecting to a database        |
+| `--env-file`     | Path to a `.env` file to load (default `.env`)             |
+
+## Releasing
+
+Releases are cut by the **Release** workflow in `.github/workflows/release.yml`. Trigger it from the GitHub Actions UI with a version like `v1.2.3`. The workflow:
+
+1. Validates the tag is well-formed and doesn't already exist
+2. Installs deps and builds the SPA (`web/dist/`)
+3. Runs `go vet`, `go test`, and `pnpm typecheck`
+4. Creates a **detached** commit that force-adds `web/dist/` (so `go get` consumers can embed the SPA without pnpm) — `main` is never updated, only the tag points to this commit
+5. Cross-compiles binaries for linux/darwin/windows × amd64/arm64
+6. Publishes a GitHub Release with the binaries and `checksums.txt`
+
+After the tag is pushed, `go get github.com/laenen-partners/dbosui@vX.Y.Z` is immediately available via the Go module proxy.
+
+`main` stays clean of build artifacts throughout — `web/dist/*` remains gitignored.
 
 ## License
 
