@@ -16,15 +16,6 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
   },
-  resolve: {
-    // highlight.js bundles ~38 languages via its default entry. We only need
-    // JSON, so rewrite *only* the bare `highlight.js` import to the core entry
-    // (~8 kB). Subpath imports like `highlight.js/lib/languages/json` are
-    // unaffected. Languages are registered explicitly in src/lib/hljs.ts.
-    alias: [
-      { find: /^highlight\.js$/, replacement: 'highlight.js/lib/core' },
-    ],
-  },
   server: {
     proxy: {
       '/api': {

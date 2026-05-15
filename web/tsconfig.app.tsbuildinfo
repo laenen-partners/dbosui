@@ -1,1 +1,0 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/theme.ts","./src/api/client.ts","./src/api/queries.ts","./src/components/jsonblock.tsx","./src/components/statsbar.tsx","./src/components/workflowdetail.tsx","./src/gen/dbosui/v1/workflows_pb.ts","./src/lib/format.ts","./src/lib/hljs.ts","./src/pages/workflowspage.tsx"],"version":"5.9.3"}
