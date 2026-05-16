@@ -21,12 +21,15 @@ func (s *workflowService) ListWorkflows(ctx context.Context, req *connect.Reques
 	msg := req.Msg
 
 	filter := ListFilter{
-		Name:     msg.GetName(),
-		Limit:    int(msg.GetLimit()),
-		Offset:   int(msg.GetOffset()),
-		SortDesc: msg.GetSortDesc(),
-		User:     msg.GetUser(),
-		IDPrefix: msg.GetIdPrefix(),
+		Name:               msg.GetName(),
+		Limit:              int(msg.GetLimit()),
+		Offset:             int(msg.GetOffset()),
+		SortDesc:           msg.GetSortDesc(),
+		User:               msg.GetUser(),
+		IDPrefix:           msg.GetIdPrefix(),
+		QueueName:          msg.GetQueueName(),
+		ExecutorID:         msg.GetExecutorId(),
+		ApplicationVersion: msg.GetApplicationVersion(),
 	}
 	for _, st := range msg.GetStatuses() {
 		filter.Status = append(filter.Status, statusFromProto(st))
@@ -84,12 +87,78 @@ func (s *workflowService) GetWorkflowEvents(ctx context.Context, req *connect.Re
 	return connect.NewResponse(out), nil
 }
 
-func (s *workflowService) ListWorkflowNames(ctx context.Context, _ *connect.Request[dbosuiv1.ListWorkflowNamesRequest]) (*connect.Response[dbosuiv1.ListWorkflowNamesResponse], error) {
-	names, err := s.client.ListWorkflowNames(ctx)
+func (s *workflowService) ListNotifications(ctx context.Context, req *connect.Request[dbosuiv1.ListNotificationsRequest]) (*connect.Response[dbosuiv1.ListNotificationsResponse], error) {
+	msg := req.Msg
+	result, err := s.client.ListNotifications(ctx, NotificationsFilter{
+		DestinationWorkflowID: msg.GetDestinationWorkflowId(),
+		Topic:                 msg.GetTopic(),
+		Limit:                 int(msg.GetLimit()),
+		Offset:                int(msg.GetOffset()),
+	})
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("list workflow names: %w", err))
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("list notifications: %w", err))
 	}
-	return connect.NewResponse(&dbosuiv1.ListWorkflowNamesResponse{Names: names}), nil
+	out := &dbosuiv1.ListNotificationsResponse{
+		Total:         int32(result.Total),
+		Notifications: make([]*dbosuiv1.Notification, len(result.Notifications)),
+	}
+	for i, n := range result.Notifications {
+		out.Notifications[i] = &dbosuiv1.Notification{
+			DestinationWorkflowId: n.DestinationWorkflowID,
+			Topic:                 n.Topic,
+			Message:               n.Message,
+			CreatedAt:             timestamppb.New(n.CreatedAt),
+		}
+	}
+	return connect.NewResponse(out), nil
+}
+
+func (s *workflowService) ListQueueStats(ctx context.Context, _ *connect.Request[dbosuiv1.ListQueueStatsRequest]) (*connect.Response[dbosuiv1.ListQueueStatsResponse], error) {
+	stats, err := s.client.ListQueueStats(ctx)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("list queue stats: %w", err))
+	}
+	out := &dbosuiv1.ListQueueStatsResponse{Queues: make([]*dbosuiv1.QueueStats, len(stats))}
+	for i, q := range stats {
+		out.Queues[i] = &dbosuiv1.QueueStats{
+			QueueName: q.QueueName,
+			Total:     int32(q.Total),
+			Pending:   int32(q.Pending),
+			Enqueued:  int32(q.Enqueued),
+			Success:   int32(q.Success),
+			Failed:    int32(q.Failed),
+			Cancelled: int32(q.Cancelled),
+		}
+	}
+	return connect.NewResponse(out), nil
+}
+
+func (s *workflowService) ListDistinctValues(ctx context.Context, req *connect.Request[dbosuiv1.ListDistinctValuesRequest]) (*connect.Response[dbosuiv1.ListDistinctValuesResponse], error) {
+	field, ok := distinctFieldFromProto(req.Msg.GetField())
+	if !ok {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("unknown workflow field"))
+	}
+	values, err := s.client.ListDistinctValues(ctx, field)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("list distinct values: %w", err))
+	}
+	return connect.NewResponse(&dbosuiv1.ListDistinctValuesResponse{Values: values}), nil
+}
+
+func distinctFieldFromProto(f dbosuiv1.WorkflowField) (DistinctField, bool) {
+	switch f {
+	case dbosuiv1.WorkflowField_WORKFLOW_FIELD_NAME:
+		return DistinctName, true
+	case dbosuiv1.WorkflowField_WORKFLOW_FIELD_QUEUE_NAME:
+		return DistinctQueueName, true
+	case dbosuiv1.WorkflowField_WORKFLOW_FIELD_EXECUTOR_ID:
+		return DistinctExecutorID, true
+	case dbosuiv1.WorkflowField_WORKFLOW_FIELD_APPLICATION_VERSION:
+		return DistinctApplicationVersion, true
+	case dbosuiv1.WorkflowField_WORKFLOW_FIELD_AUTHENTICATED_USER:
+		return DistinctAuthenticatedUser, true
+	}
+	return "", false
 }
 
 func (s *workflowService) GetStats(ctx context.Context, _ *connect.Request[dbosuiv1.GetStatsRequest]) (*connect.Response[dbosuiv1.GetStatsResponse], error) {

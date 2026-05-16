@@ -1,17 +1,30 @@
-import { AppShell, Box, Container, Group, Text, Title } from '@mantine/core';
-import { IconActivity } from '@tabler/icons-react';
-import { Route, Routes } from 'react-router-dom';
+import {
+  AppShell,
+  Box,
+  Container,
+  Group,
+  Tabs,
+  Text,
+  Title,
+} from '@mantine/core';
+import { IconActivity, IconBell, IconListDetails, IconStack3 } from '@tabler/icons-react';
+import { Link, Route, Routes, useLocation } from 'react-router-dom';
 
+import { NotificationsPage } from './pages/NotificationsPage';
+import { QueuesPage } from './pages/QueuesPage';
 import { WorkflowsPage } from './pages/WorkflowsPage';
 import { ThemeToggle } from './components/ThemeToggle';
 
 export function App() {
+  const location = useLocation();
+  const activeTab = location.pathname === '/' ? '/' : location.pathname;
+
   return (
     <AppShell header={{ height: 60 }} padding={0}>
       <AppShell.Header>
         <Container size="xl" h="100%">
-          <Group h="100%" justify="space-between">
-            <Group gap="sm">
+          <Group h="100%" justify="space-between" wrap="nowrap">
+            <Group gap="sm" wrap="nowrap">
               <Box
                 bg="var(--mantine-color-brand-6)"
                 c="white"
@@ -35,6 +48,33 @@ export function App() {
                 </Text>
               </Box>
             </Group>
+
+            <Tabs value={activeTab} variant="default" h="100%">
+              <Tabs.List style={{ borderBottom: 'none' }}>
+                <Tabs.Tab
+                  value="/"
+                  renderRoot={(props) => <Link to="/" {...props} />}
+                  leftSection={<IconListDetails size={16} />}
+                >
+                  Workflows
+                </Tabs.Tab>
+                <Tabs.Tab
+                  value="/queues"
+                  renderRoot={(props) => <Link to="/queues" {...props} />}
+                  leftSection={<IconStack3 size={16} />}
+                >
+                  Queues
+                </Tabs.Tab>
+                <Tabs.Tab
+                  value="/notifications"
+                  renderRoot={(props) => <Link to="/notifications" {...props} />}
+                  leftSection={<IconBell size={16} />}
+                >
+                  Notifications
+                </Tabs.Tab>
+              </Tabs.List>
+            </Tabs>
+
             <Group gap="xs">
               <ThemeToggle />
             </Group>
@@ -45,6 +85,8 @@ export function App() {
         <Container size="xl" py="lg">
           <Routes>
             <Route path="/" element={<WorkflowsPage />} />
+            <Route path="/queues" element={<QueuesPage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
           </Routes>
         </Container>
       </AppShell.Main>

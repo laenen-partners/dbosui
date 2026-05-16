@@ -189,9 +189,23 @@ web/                               React SPA
 `DBOSClient` mixes two sources:
 
 - **`dbos.Client`** (official Go SDK) for `ListWorkflows`, `GetWorkflowSteps`, `CancelWorkflow`, `ResumeWorkflow`
-- **`pgxpool.Pool`** (direct SQL) for substring name search (`ILIKE`) and `workflow_events` queries that the SDK doesn't expose
+- **`pgxpool.Pool`** (direct SQL) for substring name search (`ILIKE`), distinct-name lookup, `workflow_events`, total-count queries, and `DELETE`
 
 Both share the same `SystemDBPool`. Input/output values are stored as base64-encoded JSON by DBOS; they're forwarded raw to the SPA, which decodes and pretty-prints in `src/lib/format.ts`.
+
+#### Recommended indexes
+
+The UI uses offset-based pagination plus a separate `COUNT(*)` for every list call. Both queries filter by `status`, `authenticated_user`, or `workflow_uuid LIKE …` and order by `created_at`. On large workflow tables, add a supporting index in the DBOS system DB:
+
+```sql
+CREATE INDEX IF NOT EXISTS workflow_status_status_created_at_idx
+  ON dbos.workflow_status (status, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS workflow_status_name_lower_idx
+  ON dbos.workflow_status (LOWER(name));
+```
+
+The first keeps the filtered list and its count cheap; the second backs the case-insensitive substring search on `name`. The standard DBOS schema indexes `workflow_uuid` already.
 
 ## Configuration
 

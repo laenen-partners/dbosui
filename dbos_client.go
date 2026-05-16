@@ -48,10 +48,9 @@ func (c *DBOSClient) Shutdown(timeout time.Duration) {
 }
 
 func (c *DBOSClient) ListWorkflows(ctx context.Context, filter ListFilter) (*ListResult, error) {
-	// If there's a name search, query the DB directly with ILIKE for substring matching.
-	// The DBOS client's WithName does exact match only.
-	if filter.Name != "" {
-		return c.listWorkflowsByName(ctx, filter)
+	// Filters not supported by the SDK route us to the direct-SQL path.
+	if filter.Name != "" || filter.QueueName != "" || filter.ExecutorID != "" || filter.ApplicationVersion != "" {
+		return c.listWorkflowsDirect(ctx, filter)
 	}
 
 	var opts []dbos.ListWorkflowsOption
@@ -84,8 +83,15 @@ func (c *DBOSClient) ListWorkflows(ctx context.Context, filter ListFilter) (*Lis
 		return nil, fmt.Errorf("dbosui: list workflows: %w", err)
 	}
 
+	// The DBOS SDK only returns the current page; query the total separately
+	// so the UI can paginate correctly.
+	total, err := c.countWorkflows(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
 	result := &ListResult{
-		Total:     len(workflows),
+		Total:     total,
 		Workflows: make([]WorkflowInfo, len(workflows)),
 	}
 	for i, wf := range workflows {
@@ -94,11 +100,12 @@ func (c *DBOSClient) ListWorkflows(ctx context.Context, filter ListFilter) (*Lis
 	return result, nil
 }
 
-// listWorkflowsByName queries the DB directly with ILIKE for substring name search.
-func (c *DBOSClient) listWorkflowsByName(ctx context.Context, filter ListFilter) (*ListResult, error) {
-	args := []any{"%" + strings.ToLower(filter.Name) + "%"}
-	where := "WHERE LOWER(name) LIKE $1"
-	argIdx := 2
+// buildFilterWhere assembles a parameterised WHERE clause covering every
+// ListFilter field. argIdx is the placeholder index to start emitting at
+// (so callers can prepend or append their own placeholders).
+func buildFilterWhere(filter ListFilter, argIdx int) (string, []any, int) {
+	where := "WHERE 1=1"
+	var args []any
 
 	if len(filter.Status) > 0 {
 		placeholders := make([]string, len(filter.Status))
@@ -109,15 +116,64 @@ func (c *DBOSClient) listWorkflowsByName(ctx context.Context, filter ListFilter)
 		}
 		where += fmt.Sprintf(" AND status IN (%s)", strings.Join(placeholders, ","))
 	}
+	if filter.Name != "" {
+		where += fmt.Sprintf(" AND LOWER(name) LIKE $%d", argIdx)
+		args = append(args, "%"+strings.ToLower(filter.Name)+"%")
+		argIdx++
+	}
+	if filter.User != "" {
+		where += fmt.Sprintf(" AND authenticated_user = $%d", argIdx)
+		args = append(args, filter.User)
+		argIdx++
+	}
+	if filter.IDPrefix != "" {
+		where += fmt.Sprintf(" AND workflow_uuid LIKE $%d", argIdx)
+		args = append(args, filter.IDPrefix+"%")
+		argIdx++
+	}
+	if filter.QueueName != "" {
+		where += fmt.Sprintf(" AND queue_name = $%d", argIdx)
+		args = append(args, filter.QueueName)
+		argIdx++
+	}
+	if filter.ExecutorID != "" {
+		where += fmt.Sprintf(" AND executor_id = $%d", argIdx)
+		args = append(args, filter.ExecutorID)
+		argIdx++
+	}
+	if filter.ApplicationVersion != "" {
+		where += fmt.Sprintf(" AND application_version = $%d", argIdx)
+		args = append(args, filter.ApplicationVersion)
+		argIdx++
+	}
 
-	// Count total matching.
+	return where, args, argIdx
+}
+
+// countWorkflows returns the total number of rows matching the filter,
+// ignoring limit/offset/sort.
+func (c *DBOSClient) countWorkflows(ctx context.Context, filter ListFilter) (int, error) {
+	where, args, _ := buildFilterWhere(filter, 1)
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s.workflow_status %s", c.schema, where)
+	var total int
+	if err := c.pool.QueryRow(ctx, query, args...).Scan(&total); err != nil {
+		return 0, fmt.Errorf("dbosui: count workflows: %w", err)
+	}
+	return total, nil
+}
+
+// listWorkflowsDirect serves filter combinations the SDK doesn't expose
+// (substring name search, queue/executor/application-version filters).
+func (c *DBOSClient) listWorkflowsDirect(ctx context.Context, filter ListFilter) (*ListResult, error) {
+	where, args, argIdx := buildFilterWhere(filter, 1)
+
+	// Total count under the same WHERE clause.
 	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM %s.workflow_status %s", c.schema, where)
 	var total int
 	if err := c.pool.QueryRow(ctx, countQuery, args...).Scan(&total); err != nil {
 		return nil, fmt.Errorf("dbosui: count workflows: %w", err)
 	}
 
-	// Fetch page.
 	order := "ASC"
 	if filter.SortDesc {
 		order = "DESC"
@@ -173,29 +229,163 @@ func (c *DBOSClient) listWorkflowsByName(ctx context.Context, filter ListFilter)
 	return &ListResult{Workflows: workflows, Total: total}, nil
 }
 
-// ListWorkflowNames returns the set of distinct workflow names in the system,
-// sorted alphabetically. Used to populate the "filter by workflow type"
-// dropdown in the UI.
-func (c *DBOSClient) ListWorkflowNames(ctx context.Context) ([]string, error) {
+// ListNotifications queries the dbos.notifications table — the inbox of
+// messages sent via dbos.Send and awaiting consumption by dbos.Recv.
+func (c *DBOSClient) ListNotifications(ctx context.Context, filter NotificationsFilter) (*NotificationsResult, error) {
+	where := "WHERE 1=1"
+	var args []any
+	argIdx := 1
+
+	if filter.DestinationWorkflowID != "" {
+		where += fmt.Sprintf(" AND destination_uuid = $%d", argIdx)
+		args = append(args, filter.DestinationWorkflowID)
+		argIdx++
+	}
+	if filter.Topic != "" {
+		where += fmt.Sprintf(" AND topic = $%d", argIdx)
+		args = append(args, filter.Topic)
+		argIdx++
+	}
+
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM %s.notifications %s", c.schema, where)
+	var total int
+	if err := c.pool.QueryRow(ctx, countQuery, args...).Scan(&total); err != nil {
+		return nil, fmt.Errorf("dbosui: count notifications: %w", err)
+	}
+
+	limit := filter.Limit
+	if limit <= 0 {
+		limit = 50
+	}
+
+	dataQuery := fmt.Sprintf(
+		`SELECT destination_uuid, COALESCE(topic,''), COALESCE(message,''), created_at_epoch_ms
+		 FROM %s.notifications %s
+		 ORDER BY created_at_epoch_ms DESC
+		 LIMIT $%d OFFSET $%d`,
+		c.schema, where, argIdx, argIdx+1,
+	)
+	args = append(args, limit, filter.Offset)
+
+	rows, err := c.pool.Query(ctx, dataQuery, args...)
+	if err != nil {
+		return nil, fmt.Errorf("dbosui: query notifications: %w", err)
+	}
+	defer rows.Close()
+
+	var notifications []Notification
+	for rows.Next() {
+		var n Notification
+		var rawMessage string
+		var createdAtMs int64
+		if err := rows.Scan(&n.DestinationWorkflowID, &n.Topic, &rawMessage, &createdAtMs); err != nil {
+			return nil, fmt.Errorf("dbosui: scan notification: %w", err)
+		}
+		n.Message = decodeDBOSValue(rawMessage)
+		n.CreatedAt = time.UnixMilli(createdAtMs)
+		notifications = append(notifications, n)
+	}
+	return &NotificationsResult{Notifications: notifications, Total: total}, nil
+}
+
+// ListQueueStats returns per-queue rollup counts grouped by status, ordered
+// by queue name.
+func (c *DBOSClient) ListQueueStats(ctx context.Context) ([]QueueStats, error) {
 	query := fmt.Sprintf(
-		"SELECT DISTINCT name FROM %s.workflow_status WHERE name <> '' ORDER BY name",
+		`SELECT COALESCE(queue_name, ''), status, COUNT(*)
+		 FROM %s.workflow_status
+		 GROUP BY queue_name, status
+		 ORDER BY queue_name`,
 		c.schema,
 	)
 	rows, err := c.pool.Query(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("dbosui: query workflow names: %w", err)
+		return nil, fmt.Errorf("dbosui: query queue stats: %w", err)
 	}
 	defer rows.Close()
 
-	var names []string
+	byQueue := make(map[string]*QueueStats)
+	order := []string{}
 	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
-			return nil, fmt.Errorf("dbosui: scan workflow name: %w", err)
+		var q, status string
+		var count int
+		if err := rows.Scan(&q, &status, &count); err != nil {
+			return nil, fmt.Errorf("dbosui: scan queue stats: %w", err)
 		}
-		names = append(names, name)
+		stat, ok := byQueue[q]
+		if !ok {
+			stat = &QueueStats{QueueName: q}
+			byQueue[q] = stat
+			order = append(order, q)
+		}
+		stat.Total += count
+		switch WorkflowStatus(status) {
+		case StatusPending:
+			stat.Pending += count
+		case StatusEnqueued:
+			stat.Enqueued += count
+		case StatusSuccess:
+			stat.Success += count
+		case StatusError, StatusRetries:
+			stat.Failed += count
+		case StatusCancelled:
+			stat.Cancelled += count
+		}
 	}
-	return names, nil
+
+	result := make([]QueueStats, 0, len(order))
+	for _, q := range order {
+		result = append(result, *byQueue[q])
+	}
+	return result, nil
+}
+
+// ListDistinctValues returns distinct non-empty values for the given
+// workflow_status column, sorted alphabetically. Used to populate filter
+// dropdowns (workflow types, queues, executors, app versions, users).
+func (c *DBOSClient) ListDistinctValues(ctx context.Context, field DistinctField) ([]string, error) {
+	column, ok := distinctColumn(field)
+	if !ok {
+		return nil, fmt.Errorf("dbosui: unsupported distinct field %q", field)
+	}
+	query := fmt.Sprintf(
+		"SELECT DISTINCT %s FROM %s.workflow_status WHERE %s IS NOT NULL AND %s <> '' ORDER BY %s",
+		column, c.schema, column, column, column,
+	)
+	rows, err := c.pool.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("dbosui: query distinct %s: %w", column, err)
+	}
+	defer rows.Close()
+
+	var values []string
+	for rows.Next() {
+		var v string
+		if err := rows.Scan(&v); err != nil {
+			return nil, fmt.Errorf("dbosui: scan distinct %s: %w", column, err)
+		}
+		values = append(values, v)
+	}
+	return values, nil
+}
+
+// distinctColumn maps a DistinctField to its workflow_status column name.
+// Returns ok=false for unsupported fields. The mapping is closed-set so the
+// column is safe to interpolate into SQL.
+func distinctColumn(field DistinctField) (string, bool) {
+	switch field {
+	case DistinctName:
+		return "name", true
+	case DistinctQueueName:
+		return "queue_name", true
+	case DistinctExecutorID:
+		return "executor_id", true
+	case DistinctApplicationVersion:
+		return "application_version", true
+	case DistinctAuthenticatedUser:
+		return "authenticated_user", true
+	}
+	return "", false
 }
 
 func (c *DBOSClient) GetWorkflow(ctx context.Context, id string) (*WorkflowInfo, error) {

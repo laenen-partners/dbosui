@@ -2,11 +2,15 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { notifications } from '@mantine/notifications';
 
 import { workflowClient } from './client.js';
-import type { WorkflowStatus } from '../gen/dbosui/v1/workflows_pb.js';
+import type { WorkflowField, WorkflowStatus } from '../gen/dbosui/v1/workflows_pb.js';
 
 export type ListParams = {
   statuses: WorkflowStatus[];
   name: string;
+  queueName: string;
+  executorId: string;
+  applicationVersion: string;
+  user: string;
   limit: number;
   offset: number;
   sortDesc: boolean;
@@ -19,6 +23,10 @@ export function useWorkflows(params: ListParams) {
       workflowClient.listWorkflows({
         statuses: params.statuses,
         name: params.name,
+        queueName: params.queueName,
+        executorId: params.executorId,
+        applicationVersion: params.applicationVersion,
+        user: params.user,
         limit: params.limit,
         offset: params.offset,
         sortDesc: params.sortDesc,
@@ -34,10 +42,38 @@ export function useStats() {
   });
 }
 
-export function useWorkflowNames() {
+export function useQueueStats() {
   return useQuery({
-    queryKey: ['workflow-names'],
-    queryFn: () => workflowClient.listWorkflowNames({}),
+    queryKey: ['queue-stats'],
+    queryFn: () => workflowClient.listQueueStats({}),
+  });
+}
+
+export type NotificationParams = {
+  destinationWorkflowId: string;
+  topic: string;
+  limit: number;
+  offset: number;
+};
+
+export function useNotifications(params: NotificationParams) {
+  return useQuery({
+    queryKey: ['notifications', params],
+    queryFn: () =>
+      workflowClient.listNotifications({
+        destinationWorkflowId: params.destinationWorkflowId,
+        topic: params.topic,
+        limit: params.limit,
+        offset: params.offset,
+      }),
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useDistinctValues(field: WorkflowField) {
+  return useQuery({
+    queryKey: ['distinct', field],
+    queryFn: () => workflowClient.listDistinctValues({ field }),
     staleTime: 60_000,
   });
 }

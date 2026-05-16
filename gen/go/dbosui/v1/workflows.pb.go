@@ -83,6 +83,65 @@ func (WorkflowStatus) EnumDescriptor() ([]byte, []int) {
 	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{0}
 }
 
+// Field on workflow_status that can be enumerated for filter dropdowns.
+type WorkflowField int32
+
+const (
+	WorkflowField_WORKFLOW_FIELD_UNSPECIFIED         WorkflowField = 0
+	WorkflowField_WORKFLOW_FIELD_NAME                WorkflowField = 1
+	WorkflowField_WORKFLOW_FIELD_QUEUE_NAME          WorkflowField = 2
+	WorkflowField_WORKFLOW_FIELD_EXECUTOR_ID         WorkflowField = 3
+	WorkflowField_WORKFLOW_FIELD_APPLICATION_VERSION WorkflowField = 4
+	WorkflowField_WORKFLOW_FIELD_AUTHENTICATED_USER  WorkflowField = 5
+)
+
+// Enum value maps for WorkflowField.
+var (
+	WorkflowField_name = map[int32]string{
+		0: "WORKFLOW_FIELD_UNSPECIFIED",
+		1: "WORKFLOW_FIELD_NAME",
+		2: "WORKFLOW_FIELD_QUEUE_NAME",
+		3: "WORKFLOW_FIELD_EXECUTOR_ID",
+		4: "WORKFLOW_FIELD_APPLICATION_VERSION",
+		5: "WORKFLOW_FIELD_AUTHENTICATED_USER",
+	}
+	WorkflowField_value = map[string]int32{
+		"WORKFLOW_FIELD_UNSPECIFIED":         0,
+		"WORKFLOW_FIELD_NAME":                1,
+		"WORKFLOW_FIELD_QUEUE_NAME":          2,
+		"WORKFLOW_FIELD_EXECUTOR_ID":         3,
+		"WORKFLOW_FIELD_APPLICATION_VERSION": 4,
+		"WORKFLOW_FIELD_AUTHENTICATED_USER":  5,
+	}
+)
+
+func (x WorkflowField) Enum() *WorkflowField {
+	p := new(WorkflowField)
+	*p = x
+	return p
+}
+
+func (x WorkflowField) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (WorkflowField) Descriptor() protoreflect.EnumDescriptor {
+	return file_dbosui_v1_workflows_proto_enumTypes[1].Descriptor()
+}
+
+func (WorkflowField) Type() protoreflect.EnumType {
+	return &file_dbosui_v1_workflows_proto_enumTypes[1]
+}
+
+func (x WorkflowField) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use WorkflowField.Descriptor instead.
+func (WorkflowField) EnumDescriptor() ([]byte, []int) {
+	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{1}
+}
+
 type Workflow struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	Id                string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -430,16 +489,19 @@ func (x *Stats) GetCancelled() int32 {
 }
 
 type ListWorkflowsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Statuses      []WorkflowStatus       `protobuf:"varint,1,rep,packed,name=statuses,proto3,enum=dbosui.v1.WorkflowStatus" json:"statuses,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Limit         int32                  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
-	Offset        int32                  `protobuf:"varint,4,opt,name=offset,proto3" json:"offset,omitempty"`
-	SortDesc      bool                   `protobuf:"varint,5,opt,name=sort_desc,json=sortDesc,proto3" json:"sort_desc,omitempty"`
-	User          string                 `protobuf:"bytes,6,opt,name=user,proto3" json:"user,omitempty"`
-	IdPrefix      string                 `protobuf:"bytes,7,opt,name=id_prefix,json=idPrefix,proto3" json:"id_prefix,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Statuses           []WorkflowStatus       `protobuf:"varint,1,rep,packed,name=statuses,proto3,enum=dbosui.v1.WorkflowStatus" json:"statuses,omitempty"`
+	Name               string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Limit              int32                  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
+	Offset             int32                  `protobuf:"varint,4,opt,name=offset,proto3" json:"offset,omitempty"`
+	SortDesc           bool                   `protobuf:"varint,5,opt,name=sort_desc,json=sortDesc,proto3" json:"sort_desc,omitempty"`
+	User               string                 `protobuf:"bytes,6,opt,name=user,proto3" json:"user,omitempty"`
+	IdPrefix           string                 `protobuf:"bytes,7,opt,name=id_prefix,json=idPrefix,proto3" json:"id_prefix,omitempty"`
+	QueueName          string                 `protobuf:"bytes,8,opt,name=queue_name,json=queueName,proto3" json:"queue_name,omitempty"`
+	ExecutorId         string                 `protobuf:"bytes,9,opt,name=executor_id,json=executorId,proto3" json:"executor_id,omitempty"`
+	ApplicationVersion string                 `protobuf:"bytes,10,opt,name=application_version,json=applicationVersion,proto3" json:"application_version,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *ListWorkflowsRequest) Reset() {
@@ -517,6 +579,27 @@ func (x *ListWorkflowsRequest) GetUser() string {
 func (x *ListWorkflowsRequest) GetIdPrefix() string {
 	if x != nil {
 		return x.IdPrefix
+	}
+	return ""
+}
+
+func (x *ListWorkflowsRequest) GetQueueName() string {
+	if x != nil {
+		return x.QueueName
+	}
+	return ""
+}
+
+func (x *ListWorkflowsRequest) GetExecutorId() string {
+	if x != nil {
+		return x.ExecutorId
+	}
+	return ""
+}
+
+func (x *ListWorkflowsRequest) GetApplicationVersion() string {
+	if x != nil {
+		return x.ApplicationVersion
 	}
 	return ""
 }
@@ -917,6 +1000,366 @@ func (x *GetStatsResponse) GetStats() *Stats {
 	return nil
 }
 
+type QueueStats struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	QueueName     string                 `protobuf:"bytes,1,opt,name=queue_name,json=queueName,proto3" json:"queue_name,omitempty"`
+	Total         int32                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	Pending       int32                  `protobuf:"varint,3,opt,name=pending,proto3" json:"pending,omitempty"`
+	Enqueued      int32                  `protobuf:"varint,4,opt,name=enqueued,proto3" json:"enqueued,omitempty"`
+	Success       int32                  `protobuf:"varint,5,opt,name=success,proto3" json:"success,omitempty"`
+	Failed        int32                  `protobuf:"varint,6,opt,name=failed,proto3" json:"failed,omitempty"`
+	Cancelled     int32                  `protobuf:"varint,7,opt,name=cancelled,proto3" json:"cancelled,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *QueueStats) Reset() {
+	*x = QueueStats{}
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *QueueStats) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueueStats) ProtoMessage() {}
+
+func (x *QueueStats) ProtoReflect() protoreflect.Message {
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QueueStats.ProtoReflect.Descriptor instead.
+func (*QueueStats) Descriptor() ([]byte, []int) {
+	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *QueueStats) GetQueueName() string {
+	if x != nil {
+		return x.QueueName
+	}
+	return ""
+}
+
+func (x *QueueStats) GetTotal() int32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+func (x *QueueStats) GetPending() int32 {
+	if x != nil {
+		return x.Pending
+	}
+	return 0
+}
+
+func (x *QueueStats) GetEnqueued() int32 {
+	if x != nil {
+		return x.Enqueued
+	}
+	return 0
+}
+
+func (x *QueueStats) GetSuccess() int32 {
+	if x != nil {
+		return x.Success
+	}
+	return 0
+}
+
+func (x *QueueStats) GetFailed() int32 {
+	if x != nil {
+		return x.Failed
+	}
+	return 0
+}
+
+func (x *QueueStats) GetCancelled() int32 {
+	if x != nil {
+		return x.Cancelled
+	}
+	return 0
+}
+
+type ListQueueStatsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListQueueStatsRequest) Reset() {
+	*x = ListQueueStatsRequest{}
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListQueueStatsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListQueueStatsRequest) ProtoMessage() {}
+
+func (x *ListQueueStatsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListQueueStatsRequest.ProtoReflect.Descriptor instead.
+func (*ListQueueStatsRequest) Descriptor() ([]byte, []int) {
+	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{15}
+}
+
+type ListQueueStatsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Queues        []*QueueStats          `protobuf:"bytes,1,rep,name=queues,proto3" json:"queues,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListQueueStatsResponse) Reset() {
+	*x = ListQueueStatsResponse{}
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListQueueStatsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListQueueStatsResponse) ProtoMessage() {}
+
+func (x *ListQueueStatsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListQueueStatsResponse.ProtoReflect.Descriptor instead.
+func (*ListQueueStatsResponse) Descriptor() ([]byte, []int) {
+	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *ListQueueStatsResponse) GetQueues() []*QueueStats {
+	if x != nil {
+		return x.Queues
+	}
+	return nil
+}
+
+type Notification struct {
+	state                 protoimpl.MessageState `protogen:"open.v1"`
+	DestinationWorkflowId string                 `protobuf:"bytes,1,opt,name=destination_workflow_id,json=destinationWorkflowId,proto3" json:"destination_workflow_id,omitempty"`
+	Topic                 string                 `protobuf:"bytes,2,opt,name=topic,proto3" json:"topic,omitempty"`
+	Message               string                 `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
+	CreatedAt             *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *Notification) Reset() {
+	*x = Notification{}
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Notification) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Notification) ProtoMessage() {}
+
+func (x *Notification) ProtoReflect() protoreflect.Message {
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Notification.ProtoReflect.Descriptor instead.
+func (*Notification) Descriptor() ([]byte, []int) {
+	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *Notification) GetDestinationWorkflowId() string {
+	if x != nil {
+		return x.DestinationWorkflowId
+	}
+	return ""
+}
+
+func (x *Notification) GetTopic() string {
+	if x != nil {
+		return x.Topic
+	}
+	return ""
+}
+
+func (x *Notification) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *Notification) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+type ListNotificationsRequest struct {
+	state                 protoimpl.MessageState `protogen:"open.v1"`
+	DestinationWorkflowId string                 `protobuf:"bytes,1,opt,name=destination_workflow_id,json=destinationWorkflowId,proto3" json:"destination_workflow_id,omitempty"`
+	Topic                 string                 `protobuf:"bytes,2,opt,name=topic,proto3" json:"topic,omitempty"`
+	Limit                 int32                  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
+	Offset                int32                  `protobuf:"varint,4,opt,name=offset,proto3" json:"offset,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *ListNotificationsRequest) Reset() {
+	*x = ListNotificationsRequest{}
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListNotificationsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListNotificationsRequest) ProtoMessage() {}
+
+func (x *ListNotificationsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListNotificationsRequest.ProtoReflect.Descriptor instead.
+func (*ListNotificationsRequest) Descriptor() ([]byte, []int) {
+	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ListNotificationsRequest) GetDestinationWorkflowId() string {
+	if x != nil {
+		return x.DestinationWorkflowId
+	}
+	return ""
+}
+
+func (x *ListNotificationsRequest) GetTopic() string {
+	if x != nil {
+		return x.Topic
+	}
+	return ""
+}
+
+func (x *ListNotificationsRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *ListNotificationsRequest) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+type ListNotificationsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Notifications []*Notification        `protobuf:"bytes,1,rep,name=notifications,proto3" json:"notifications,omitempty"`
+	Total         int32                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListNotificationsResponse) Reset() {
+	*x = ListNotificationsResponse{}
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListNotificationsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListNotificationsResponse) ProtoMessage() {}
+
+func (x *ListNotificationsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListNotificationsResponse.ProtoReflect.Descriptor instead.
+func (*ListNotificationsResponse) Descriptor() ([]byte, []int) {
+	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ListNotificationsResponse) GetNotifications() []*Notification {
+	if x != nil {
+		return x.Notifications
+	}
+	return nil
+}
+
+func (x *ListNotificationsResponse) GetTotal() int32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
 type CancelWorkflowRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -926,7 +1369,7 @@ type CancelWorkflowRequest struct {
 
 func (x *CancelWorkflowRequest) Reset() {
 	*x = CancelWorkflowRequest{}
-	mi := &file_dbosui_v1_workflows_proto_msgTypes[14]
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -938,7 +1381,7 @@ func (x *CancelWorkflowRequest) String() string {
 func (*CancelWorkflowRequest) ProtoMessage() {}
 
 func (x *CancelWorkflowRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dbosui_v1_workflows_proto_msgTypes[14]
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -951,7 +1394,7 @@ func (x *CancelWorkflowRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelWorkflowRequest.ProtoReflect.Descriptor instead.
 func (*CancelWorkflowRequest) Descriptor() ([]byte, []int) {
-	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{14}
+	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *CancelWorkflowRequest) GetId() string {
@@ -969,7 +1412,7 @@ type CancelWorkflowResponse struct {
 
 func (x *CancelWorkflowResponse) Reset() {
 	*x = CancelWorkflowResponse{}
-	mi := &file_dbosui_v1_workflows_proto_msgTypes[15]
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -981,7 +1424,7 @@ func (x *CancelWorkflowResponse) String() string {
 func (*CancelWorkflowResponse) ProtoMessage() {}
 
 func (x *CancelWorkflowResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dbosui_v1_workflows_proto_msgTypes[15]
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -994,7 +1437,7 @@ func (x *CancelWorkflowResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelWorkflowResponse.ProtoReflect.Descriptor instead.
 func (*CancelWorkflowResponse) Descriptor() ([]byte, []int) {
-	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{15}
+	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{21}
 }
 
 type ResumeWorkflowRequest struct {
@@ -1006,7 +1449,7 @@ type ResumeWorkflowRequest struct {
 
 func (x *ResumeWorkflowRequest) Reset() {
 	*x = ResumeWorkflowRequest{}
-	mi := &file_dbosui_v1_workflows_proto_msgTypes[16]
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1018,7 +1461,7 @@ func (x *ResumeWorkflowRequest) String() string {
 func (*ResumeWorkflowRequest) ProtoMessage() {}
 
 func (x *ResumeWorkflowRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dbosui_v1_workflows_proto_msgTypes[16]
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1031,7 +1474,7 @@ func (x *ResumeWorkflowRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResumeWorkflowRequest.ProtoReflect.Descriptor instead.
 func (*ResumeWorkflowRequest) Descriptor() ([]byte, []int) {
-	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{16}
+	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *ResumeWorkflowRequest) GetId() string {
@@ -1049,7 +1492,7 @@ type ResumeWorkflowResponse struct {
 
 func (x *ResumeWorkflowResponse) Reset() {
 	*x = ResumeWorkflowResponse{}
-	mi := &file_dbosui_v1_workflows_proto_msgTypes[17]
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1061,7 +1504,7 @@ func (x *ResumeWorkflowResponse) String() string {
 func (*ResumeWorkflowResponse) ProtoMessage() {}
 
 func (x *ResumeWorkflowResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dbosui_v1_workflows_proto_msgTypes[17]
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1074,7 +1517,7 @@ func (x *ResumeWorkflowResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResumeWorkflowResponse.ProtoReflect.Descriptor instead.
 func (*ResumeWorkflowResponse) Descriptor() ([]byte, []int) {
-	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{17}
+	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{23}
 }
 
 type DeleteWorkflowRequest struct {
@@ -1086,7 +1529,7 @@ type DeleteWorkflowRequest struct {
 
 func (x *DeleteWorkflowRequest) Reset() {
 	*x = DeleteWorkflowRequest{}
-	mi := &file_dbosui_v1_workflows_proto_msgTypes[18]
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1098,7 +1541,7 @@ func (x *DeleteWorkflowRequest) String() string {
 func (*DeleteWorkflowRequest) ProtoMessage() {}
 
 func (x *DeleteWorkflowRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dbosui_v1_workflows_proto_msgTypes[18]
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1111,7 +1554,7 @@ func (x *DeleteWorkflowRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteWorkflowRequest.ProtoReflect.Descriptor instead.
 func (*DeleteWorkflowRequest) Descriptor() ([]byte, []int) {
-	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{18}
+	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *DeleteWorkflowRequest) GetId() string {
@@ -1129,7 +1572,7 @@ type DeleteWorkflowResponse struct {
 
 func (x *DeleteWorkflowResponse) Reset() {
 	*x = DeleteWorkflowResponse{}
-	mi := &file_dbosui_v1_workflows_proto_msgTypes[19]
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1141,7 +1584,7 @@ func (x *DeleteWorkflowResponse) String() string {
 func (*DeleteWorkflowResponse) ProtoMessage() {}
 
 func (x *DeleteWorkflowResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dbosui_v1_workflows_proto_msgTypes[19]
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1154,30 +1597,31 @@ func (x *DeleteWorkflowResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteWorkflowResponse.ProtoReflect.Descriptor instead.
 func (*DeleteWorkflowResponse) Descriptor() ([]byte, []int) {
-	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{19}
+	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{25}
 }
 
-type ListWorkflowNamesRequest struct {
+type ListDistinctValuesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Field         WorkflowField          `protobuf:"varint,1,opt,name=field,proto3,enum=dbosui.v1.WorkflowField" json:"field,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListWorkflowNamesRequest) Reset() {
-	*x = ListWorkflowNamesRequest{}
-	mi := &file_dbosui_v1_workflows_proto_msgTypes[20]
+func (x *ListDistinctValuesRequest) Reset() {
+	*x = ListDistinctValuesRequest{}
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListWorkflowNamesRequest) String() string {
+func (x *ListDistinctValuesRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListWorkflowNamesRequest) ProtoMessage() {}
+func (*ListDistinctValuesRequest) ProtoMessage() {}
 
-func (x *ListWorkflowNamesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dbosui_v1_workflows_proto_msgTypes[20]
+func (x *ListDistinctValuesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1188,34 +1632,40 @@ func (x *ListWorkflowNamesRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListWorkflowNamesRequest.ProtoReflect.Descriptor instead.
-func (*ListWorkflowNamesRequest) Descriptor() ([]byte, []int) {
-	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{20}
+// Deprecated: Use ListDistinctValuesRequest.ProtoReflect.Descriptor instead.
+func (*ListDistinctValuesRequest) Descriptor() ([]byte, []int) {
+	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{26}
 }
 
-type ListWorkflowNamesResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Distinct workflow names known to the system, sorted alphabetically.
-	Names         []string `protobuf:"bytes,1,rep,name=names,proto3" json:"names,omitempty"`
+func (x *ListDistinctValuesRequest) GetField() WorkflowField {
+	if x != nil {
+		return x.Field
+	}
+	return WorkflowField_WORKFLOW_FIELD_UNSPECIFIED
+}
+
+type ListDistinctValuesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Values        []string               `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListWorkflowNamesResponse) Reset() {
-	*x = ListWorkflowNamesResponse{}
-	mi := &file_dbosui_v1_workflows_proto_msgTypes[21]
+func (x *ListDistinctValuesResponse) Reset() {
+	*x = ListDistinctValuesResponse{}
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListWorkflowNamesResponse) String() string {
+func (x *ListDistinctValuesResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListWorkflowNamesResponse) ProtoMessage() {}
+func (*ListDistinctValuesResponse) ProtoMessage() {}
 
-func (x *ListWorkflowNamesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dbosui_v1_workflows_proto_msgTypes[21]
+func (x *ListDistinctValuesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1226,14 +1676,14 @@ func (x *ListWorkflowNamesResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListWorkflowNamesResponse.ProtoReflect.Descriptor instead.
-func (*ListWorkflowNamesResponse) Descriptor() ([]byte, []int) {
-	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{21}
+// Deprecated: Use ListDistinctValuesResponse.ProtoReflect.Descriptor instead.
+func (*ListDistinctValuesResponse) Descriptor() ([]byte, []int) {
+	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{27}
 }
 
-func (x *ListWorkflowNamesResponse) GetNames() []string {
+func (x *ListDistinctValuesResponse) GetValues() []string {
 	if x != nil {
-		return x.Names
+		return x.Values
 	}
 	return nil
 }
@@ -1279,7 +1729,7 @@ const file_dbosui_v1_workflows_proto_rawDesc = "" +
 	"\apending\x18\x02 \x01(\x05R\apending\x12\x18\n" +
 	"\asuccess\x18\x03 \x01(\x05R\asuccess\x12\x16\n" +
 	"\x06failed\x18\x04 \x01(\x05R\x06failed\x12\x1c\n" +
-	"\tcancelled\x18\x05 \x01(\x05R\tcancelled\"\xdd\x01\n" +
+	"\tcancelled\x18\x05 \x01(\x05R\tcancelled\"\xce\x02\n" +
 	"\x14ListWorkflowsRequest\x125\n" +
 	"\bstatuses\x18\x01 \x03(\x0e2\x19.dbosui.v1.WorkflowStatusR\bstatuses\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
@@ -1287,7 +1737,13 @@ const file_dbosui_v1_workflows_proto_rawDesc = "" +
 	"\x06offset\x18\x04 \x01(\x05R\x06offset\x12\x1b\n" +
 	"\tsort_desc\x18\x05 \x01(\bR\bsortDesc\x12\x12\n" +
 	"\x04user\x18\x06 \x01(\tR\x04user\x12\x1b\n" +
-	"\tid_prefix\x18\a \x01(\tR\bidPrefix\"`\n" +
+	"\tid_prefix\x18\a \x01(\tR\bidPrefix\x12\x1d\n" +
+	"\n" +
+	"queue_name\x18\b \x01(\tR\tqueueName\x12\x1f\n" +
+	"\vexecutor_id\x18\t \x01(\tR\n" +
+	"executorId\x12/\n" +
+	"\x13application_version\x18\n" +
+	" \x01(\tR\x12applicationVersion\"`\n" +
 	"\x15ListWorkflowsResponse\x121\n" +
 	"\tworkflows\x18\x01 \x03(\v2\x13.dbosui.v1.WorkflowR\tworkflows\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x05R\x05total\"$\n" +
@@ -1305,7 +1761,34 @@ const file_dbosui_v1_workflows_proto_rawDesc = "" +
 	"\x06events\x18\x01 \x03(\v2\x10.dbosui.v1.EventR\x06events\"\x11\n" +
 	"\x0fGetStatsRequest\":\n" +
 	"\x10GetStatsResponse\x12&\n" +
-	"\x05stats\x18\x01 \x01(\v2\x10.dbosui.v1.StatsR\x05stats\"'\n" +
+	"\x05stats\x18\x01 \x01(\v2\x10.dbosui.v1.StatsR\x05stats\"\xc7\x01\n" +
+	"\n" +
+	"QueueStats\x12\x1d\n" +
+	"\n" +
+	"queue_name\x18\x01 \x01(\tR\tqueueName\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\x12\x18\n" +
+	"\apending\x18\x03 \x01(\x05R\apending\x12\x1a\n" +
+	"\benqueued\x18\x04 \x01(\x05R\benqueued\x12\x18\n" +
+	"\asuccess\x18\x05 \x01(\x05R\asuccess\x12\x16\n" +
+	"\x06failed\x18\x06 \x01(\x05R\x06failed\x12\x1c\n" +
+	"\tcancelled\x18\a \x01(\x05R\tcancelled\"\x17\n" +
+	"\x15ListQueueStatsRequest\"G\n" +
+	"\x16ListQueueStatsResponse\x12-\n" +
+	"\x06queues\x18\x01 \x03(\v2\x15.dbosui.v1.QueueStatsR\x06queues\"\xb1\x01\n" +
+	"\fNotification\x126\n" +
+	"\x17destination_workflow_id\x18\x01 \x01(\tR\x15destinationWorkflowId\x12\x14\n" +
+	"\x05topic\x18\x02 \x01(\tR\x05topic\x12\x18\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\x129\n" +
+	"\n" +
+	"created_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\x96\x01\n" +
+	"\x18ListNotificationsRequest\x126\n" +
+	"\x17destination_workflow_id\x18\x01 \x01(\tR\x15destinationWorkflowId\x12\x14\n" +
+	"\x05topic\x18\x02 \x01(\tR\x05topic\x12\x14\n" +
+	"\x05limit\x18\x03 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\x04 \x01(\x05R\x06offset\"p\n" +
+	"\x19ListNotificationsResponse\x12=\n" +
+	"\rnotifications\x18\x01 \x03(\v2\x17.dbosui.v1.NotificationR\rnotifications\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"'\n" +
 	"\x15CancelWorkflowRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"\x18\n" +
 	"\x16CancelWorkflowResponse\"'\n" +
@@ -1314,10 +1797,11 @@ const file_dbosui_v1_workflows_proto_rawDesc = "" +
 	"\x16ResumeWorkflowResponse\"'\n" +
 	"\x15DeleteWorkflowRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"\x18\n" +
-	"\x16DeleteWorkflowResponse\"\x1a\n" +
-	"\x18ListWorkflowNamesRequest\"1\n" +
-	"\x19ListWorkflowNamesResponse\x12\x14\n" +
-	"\x05names\x18\x01 \x03(\tR\x05names*\xed\x01\n" +
+	"\x16DeleteWorkflowResponse\"K\n" +
+	"\x19ListDistinctValuesRequest\x12.\n" +
+	"\x05field\x18\x01 \x01(\x0e2\x18.dbosui.v1.WorkflowFieldR\x05field\"4\n" +
+	"\x1aListDistinctValuesResponse\x12\x16\n" +
+	"\x06values\x18\x01 \x03(\tR\x06values*\xed\x01\n" +
 	"\x0eWorkflowStatus\x12\x1f\n" +
 	"\x1bWORKFLOW_STATUS_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17WORKFLOW_STATUS_PENDING\x10\x01\x12\x1c\n" +
@@ -1325,14 +1809,23 @@ const file_dbosui_v1_workflows_proto_rawDesc = "" +
 	"\x17WORKFLOW_STATUS_SUCCESS\x10\x03\x12\x19\n" +
 	"\x15WORKFLOW_STATUS_ERROR\x10\x04\x12\x1d\n" +
 	"\x19WORKFLOW_STATUS_CANCELLED\x10\x05\x12(\n" +
-	"$WORKFLOW_STATUS_MAX_RETRIES_EXCEEDED\x10\x062\x9a\x06\n" +
+	"$WORKFLOW_STATUS_MAX_RETRIES_EXCEEDED\x10\x06*\xd6\x01\n" +
+	"\rWorkflowField\x12\x1e\n" +
+	"\x1aWORKFLOW_FIELD_UNSPECIFIED\x10\x00\x12\x17\n" +
+	"\x13WORKFLOW_FIELD_NAME\x10\x01\x12\x1d\n" +
+	"\x19WORKFLOW_FIELD_QUEUE_NAME\x10\x02\x12\x1e\n" +
+	"\x1aWORKFLOW_FIELD_EXECUTOR_ID\x10\x03\x12&\n" +
+	"\"WORKFLOW_FIELD_APPLICATION_VERSION\x10\x04\x12%\n" +
+	"!WORKFLOW_FIELD_AUTHENTICATED_USER\x10\x052\xd4\a\n" +
 	"\x0fWorkflowService\x12R\n" +
 	"\rListWorkflows\x12\x1f.dbosui.v1.ListWorkflowsRequest\x1a .dbosui.v1.ListWorkflowsResponse\x12L\n" +
 	"\vGetWorkflow\x12\x1d.dbosui.v1.GetWorkflowRequest\x1a\x1e.dbosui.v1.GetWorkflowResponse\x12[\n" +
 	"\x10GetWorkflowSteps\x12\".dbosui.v1.GetWorkflowStepsRequest\x1a#.dbosui.v1.GetWorkflowStepsResponse\x12^\n" +
 	"\x11GetWorkflowEvents\x12#.dbosui.v1.GetWorkflowEventsRequest\x1a$.dbosui.v1.GetWorkflowEventsResponse\x12C\n" +
-	"\bGetStats\x12\x1a.dbosui.v1.GetStatsRequest\x1a\x1b.dbosui.v1.GetStatsResponse\x12^\n" +
-	"\x11ListWorkflowNames\x12#.dbosui.v1.ListWorkflowNamesRequest\x1a$.dbosui.v1.ListWorkflowNamesResponse\x12U\n" +
+	"\bGetStats\x12\x1a.dbosui.v1.GetStatsRequest\x1a\x1b.dbosui.v1.GetStatsResponse\x12U\n" +
+	"\x0eListQueueStats\x12 .dbosui.v1.ListQueueStatsRequest\x1a!.dbosui.v1.ListQueueStatsResponse\x12^\n" +
+	"\x11ListNotifications\x12#.dbosui.v1.ListNotificationsRequest\x1a$.dbosui.v1.ListNotificationsResponse\x12a\n" +
+	"\x12ListDistinctValues\x12$.dbosui.v1.ListDistinctValuesRequest\x1a%.dbosui.v1.ListDistinctValuesResponse\x12U\n" +
 	"\x0eCancelWorkflow\x12 .dbosui.v1.CancelWorkflowRequest\x1a!.dbosui.v1.CancelWorkflowResponse\x12U\n" +
 	"\x0eResumeWorkflow\x12 .dbosui.v1.ResumeWorkflowRequest\x1a!.dbosui.v1.ResumeWorkflowResponse\x12U\n" +
 	"\x0eDeleteWorkflow\x12 .dbosui.v1.DeleteWorkflowRequest\x1a!.dbosui.v1.DeleteWorkflowResponseB=Z;github.com/laenen-partners/dbosui/gen/go/dbosui/v1;dbosuiv1b\x06proto3"
@@ -1349,67 +1842,82 @@ func file_dbosui_v1_workflows_proto_rawDescGZIP() []byte {
 	return file_dbosui_v1_workflows_proto_rawDescData
 }
 
-var file_dbosui_v1_workflows_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_dbosui_v1_workflows_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
+var file_dbosui_v1_workflows_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_dbosui_v1_workflows_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
 var file_dbosui_v1_workflows_proto_goTypes = []any{
-	(WorkflowStatus)(0),               // 0: dbosui.v1.WorkflowStatus
-	(*Workflow)(nil),                  // 1: dbosui.v1.Workflow
-	(*Step)(nil),                      // 2: dbosui.v1.Step
-	(*Event)(nil),                     // 3: dbosui.v1.Event
-	(*Stats)(nil),                     // 4: dbosui.v1.Stats
-	(*ListWorkflowsRequest)(nil),      // 5: dbosui.v1.ListWorkflowsRequest
-	(*ListWorkflowsResponse)(nil),     // 6: dbosui.v1.ListWorkflowsResponse
-	(*GetWorkflowRequest)(nil),        // 7: dbosui.v1.GetWorkflowRequest
-	(*GetWorkflowResponse)(nil),       // 8: dbosui.v1.GetWorkflowResponse
-	(*GetWorkflowStepsRequest)(nil),   // 9: dbosui.v1.GetWorkflowStepsRequest
-	(*GetWorkflowStepsResponse)(nil),  // 10: dbosui.v1.GetWorkflowStepsResponse
-	(*GetWorkflowEventsRequest)(nil),  // 11: dbosui.v1.GetWorkflowEventsRequest
-	(*GetWorkflowEventsResponse)(nil), // 12: dbosui.v1.GetWorkflowEventsResponse
-	(*GetStatsRequest)(nil),           // 13: dbosui.v1.GetStatsRequest
-	(*GetStatsResponse)(nil),          // 14: dbosui.v1.GetStatsResponse
-	(*CancelWorkflowRequest)(nil),     // 15: dbosui.v1.CancelWorkflowRequest
-	(*CancelWorkflowResponse)(nil),    // 16: dbosui.v1.CancelWorkflowResponse
-	(*ResumeWorkflowRequest)(nil),     // 17: dbosui.v1.ResumeWorkflowRequest
-	(*ResumeWorkflowResponse)(nil),    // 18: dbosui.v1.ResumeWorkflowResponse
-	(*DeleteWorkflowRequest)(nil),     // 19: dbosui.v1.DeleteWorkflowRequest
-	(*DeleteWorkflowResponse)(nil),    // 20: dbosui.v1.DeleteWorkflowResponse
-	(*ListWorkflowNamesRequest)(nil),  // 21: dbosui.v1.ListWorkflowNamesRequest
-	(*ListWorkflowNamesResponse)(nil), // 22: dbosui.v1.ListWorkflowNamesResponse
-	(*timestamppb.Timestamp)(nil),     // 23: google.protobuf.Timestamp
+	(WorkflowStatus)(0),                // 0: dbosui.v1.WorkflowStatus
+	(WorkflowField)(0),                 // 1: dbosui.v1.WorkflowField
+	(*Workflow)(nil),                   // 2: dbosui.v1.Workflow
+	(*Step)(nil),                       // 3: dbosui.v1.Step
+	(*Event)(nil),                      // 4: dbosui.v1.Event
+	(*Stats)(nil),                      // 5: dbosui.v1.Stats
+	(*ListWorkflowsRequest)(nil),       // 6: dbosui.v1.ListWorkflowsRequest
+	(*ListWorkflowsResponse)(nil),      // 7: dbosui.v1.ListWorkflowsResponse
+	(*GetWorkflowRequest)(nil),         // 8: dbosui.v1.GetWorkflowRequest
+	(*GetWorkflowResponse)(nil),        // 9: dbosui.v1.GetWorkflowResponse
+	(*GetWorkflowStepsRequest)(nil),    // 10: dbosui.v1.GetWorkflowStepsRequest
+	(*GetWorkflowStepsResponse)(nil),   // 11: dbosui.v1.GetWorkflowStepsResponse
+	(*GetWorkflowEventsRequest)(nil),   // 12: dbosui.v1.GetWorkflowEventsRequest
+	(*GetWorkflowEventsResponse)(nil),  // 13: dbosui.v1.GetWorkflowEventsResponse
+	(*GetStatsRequest)(nil),            // 14: dbosui.v1.GetStatsRequest
+	(*GetStatsResponse)(nil),           // 15: dbosui.v1.GetStatsResponse
+	(*QueueStats)(nil),                 // 16: dbosui.v1.QueueStats
+	(*ListQueueStatsRequest)(nil),      // 17: dbosui.v1.ListQueueStatsRequest
+	(*ListQueueStatsResponse)(nil),     // 18: dbosui.v1.ListQueueStatsResponse
+	(*Notification)(nil),               // 19: dbosui.v1.Notification
+	(*ListNotificationsRequest)(nil),   // 20: dbosui.v1.ListNotificationsRequest
+	(*ListNotificationsResponse)(nil),  // 21: dbosui.v1.ListNotificationsResponse
+	(*CancelWorkflowRequest)(nil),      // 22: dbosui.v1.CancelWorkflowRequest
+	(*CancelWorkflowResponse)(nil),     // 23: dbosui.v1.CancelWorkflowResponse
+	(*ResumeWorkflowRequest)(nil),      // 24: dbosui.v1.ResumeWorkflowRequest
+	(*ResumeWorkflowResponse)(nil),     // 25: dbosui.v1.ResumeWorkflowResponse
+	(*DeleteWorkflowRequest)(nil),      // 26: dbosui.v1.DeleteWorkflowRequest
+	(*DeleteWorkflowResponse)(nil),     // 27: dbosui.v1.DeleteWorkflowResponse
+	(*ListDistinctValuesRequest)(nil),  // 28: dbosui.v1.ListDistinctValuesRequest
+	(*ListDistinctValuesResponse)(nil), // 29: dbosui.v1.ListDistinctValuesResponse
+	(*timestamppb.Timestamp)(nil),      // 30: google.protobuf.Timestamp
 }
 var file_dbosui_v1_workflows_proto_depIdxs = []int32{
 	0,  // 0: dbosui.v1.Workflow.status:type_name -> dbosui.v1.WorkflowStatus
-	23, // 1: dbosui.v1.Workflow.created_at:type_name -> google.protobuf.Timestamp
-	23, // 2: dbosui.v1.Workflow.updated_at:type_name -> google.protobuf.Timestamp
+	30, // 1: dbosui.v1.Workflow.created_at:type_name -> google.protobuf.Timestamp
+	30, // 2: dbosui.v1.Workflow.updated_at:type_name -> google.protobuf.Timestamp
 	0,  // 3: dbosui.v1.ListWorkflowsRequest.statuses:type_name -> dbosui.v1.WorkflowStatus
-	1,  // 4: dbosui.v1.ListWorkflowsResponse.workflows:type_name -> dbosui.v1.Workflow
-	1,  // 5: dbosui.v1.GetWorkflowResponse.workflow:type_name -> dbosui.v1.Workflow
-	2,  // 6: dbosui.v1.GetWorkflowStepsResponse.steps:type_name -> dbosui.v1.Step
-	3,  // 7: dbosui.v1.GetWorkflowEventsResponse.events:type_name -> dbosui.v1.Event
-	4,  // 8: dbosui.v1.GetStatsResponse.stats:type_name -> dbosui.v1.Stats
-	5,  // 9: dbosui.v1.WorkflowService.ListWorkflows:input_type -> dbosui.v1.ListWorkflowsRequest
-	7,  // 10: dbosui.v1.WorkflowService.GetWorkflow:input_type -> dbosui.v1.GetWorkflowRequest
-	9,  // 11: dbosui.v1.WorkflowService.GetWorkflowSteps:input_type -> dbosui.v1.GetWorkflowStepsRequest
-	11, // 12: dbosui.v1.WorkflowService.GetWorkflowEvents:input_type -> dbosui.v1.GetWorkflowEventsRequest
-	13, // 13: dbosui.v1.WorkflowService.GetStats:input_type -> dbosui.v1.GetStatsRequest
-	21, // 14: dbosui.v1.WorkflowService.ListWorkflowNames:input_type -> dbosui.v1.ListWorkflowNamesRequest
-	15, // 15: dbosui.v1.WorkflowService.CancelWorkflow:input_type -> dbosui.v1.CancelWorkflowRequest
-	17, // 16: dbosui.v1.WorkflowService.ResumeWorkflow:input_type -> dbosui.v1.ResumeWorkflowRequest
-	19, // 17: dbosui.v1.WorkflowService.DeleteWorkflow:input_type -> dbosui.v1.DeleteWorkflowRequest
-	6,  // 18: dbosui.v1.WorkflowService.ListWorkflows:output_type -> dbosui.v1.ListWorkflowsResponse
-	8,  // 19: dbosui.v1.WorkflowService.GetWorkflow:output_type -> dbosui.v1.GetWorkflowResponse
-	10, // 20: dbosui.v1.WorkflowService.GetWorkflowSteps:output_type -> dbosui.v1.GetWorkflowStepsResponse
-	12, // 21: dbosui.v1.WorkflowService.GetWorkflowEvents:output_type -> dbosui.v1.GetWorkflowEventsResponse
-	14, // 22: dbosui.v1.WorkflowService.GetStats:output_type -> dbosui.v1.GetStatsResponse
-	22, // 23: dbosui.v1.WorkflowService.ListWorkflowNames:output_type -> dbosui.v1.ListWorkflowNamesResponse
-	16, // 24: dbosui.v1.WorkflowService.CancelWorkflow:output_type -> dbosui.v1.CancelWorkflowResponse
-	18, // 25: dbosui.v1.WorkflowService.ResumeWorkflow:output_type -> dbosui.v1.ResumeWorkflowResponse
-	20, // 26: dbosui.v1.WorkflowService.DeleteWorkflow:output_type -> dbosui.v1.DeleteWorkflowResponse
-	18, // [18:27] is the sub-list for method output_type
-	9,  // [9:18] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	2,  // 4: dbosui.v1.ListWorkflowsResponse.workflows:type_name -> dbosui.v1.Workflow
+	2,  // 5: dbosui.v1.GetWorkflowResponse.workflow:type_name -> dbosui.v1.Workflow
+	3,  // 6: dbosui.v1.GetWorkflowStepsResponse.steps:type_name -> dbosui.v1.Step
+	4,  // 7: dbosui.v1.GetWorkflowEventsResponse.events:type_name -> dbosui.v1.Event
+	5,  // 8: dbosui.v1.GetStatsResponse.stats:type_name -> dbosui.v1.Stats
+	16, // 9: dbosui.v1.ListQueueStatsResponse.queues:type_name -> dbosui.v1.QueueStats
+	30, // 10: dbosui.v1.Notification.created_at:type_name -> google.protobuf.Timestamp
+	19, // 11: dbosui.v1.ListNotificationsResponse.notifications:type_name -> dbosui.v1.Notification
+	1,  // 12: dbosui.v1.ListDistinctValuesRequest.field:type_name -> dbosui.v1.WorkflowField
+	6,  // 13: dbosui.v1.WorkflowService.ListWorkflows:input_type -> dbosui.v1.ListWorkflowsRequest
+	8,  // 14: dbosui.v1.WorkflowService.GetWorkflow:input_type -> dbosui.v1.GetWorkflowRequest
+	10, // 15: dbosui.v1.WorkflowService.GetWorkflowSteps:input_type -> dbosui.v1.GetWorkflowStepsRequest
+	12, // 16: dbosui.v1.WorkflowService.GetWorkflowEvents:input_type -> dbosui.v1.GetWorkflowEventsRequest
+	14, // 17: dbosui.v1.WorkflowService.GetStats:input_type -> dbosui.v1.GetStatsRequest
+	17, // 18: dbosui.v1.WorkflowService.ListQueueStats:input_type -> dbosui.v1.ListQueueStatsRequest
+	20, // 19: dbosui.v1.WorkflowService.ListNotifications:input_type -> dbosui.v1.ListNotificationsRequest
+	28, // 20: dbosui.v1.WorkflowService.ListDistinctValues:input_type -> dbosui.v1.ListDistinctValuesRequest
+	22, // 21: dbosui.v1.WorkflowService.CancelWorkflow:input_type -> dbosui.v1.CancelWorkflowRequest
+	24, // 22: dbosui.v1.WorkflowService.ResumeWorkflow:input_type -> dbosui.v1.ResumeWorkflowRequest
+	26, // 23: dbosui.v1.WorkflowService.DeleteWorkflow:input_type -> dbosui.v1.DeleteWorkflowRequest
+	7,  // 24: dbosui.v1.WorkflowService.ListWorkflows:output_type -> dbosui.v1.ListWorkflowsResponse
+	9,  // 25: dbosui.v1.WorkflowService.GetWorkflow:output_type -> dbosui.v1.GetWorkflowResponse
+	11, // 26: dbosui.v1.WorkflowService.GetWorkflowSteps:output_type -> dbosui.v1.GetWorkflowStepsResponse
+	13, // 27: dbosui.v1.WorkflowService.GetWorkflowEvents:output_type -> dbosui.v1.GetWorkflowEventsResponse
+	15, // 28: dbosui.v1.WorkflowService.GetStats:output_type -> dbosui.v1.GetStatsResponse
+	18, // 29: dbosui.v1.WorkflowService.ListQueueStats:output_type -> dbosui.v1.ListQueueStatsResponse
+	21, // 30: dbosui.v1.WorkflowService.ListNotifications:output_type -> dbosui.v1.ListNotificationsResponse
+	29, // 31: dbosui.v1.WorkflowService.ListDistinctValues:output_type -> dbosui.v1.ListDistinctValuesResponse
+	23, // 32: dbosui.v1.WorkflowService.CancelWorkflow:output_type -> dbosui.v1.CancelWorkflowResponse
+	25, // 33: dbosui.v1.WorkflowService.ResumeWorkflow:output_type -> dbosui.v1.ResumeWorkflowResponse
+	27, // 34: dbosui.v1.WorkflowService.DeleteWorkflow:output_type -> dbosui.v1.DeleteWorkflowResponse
+	24, // [24:35] is the sub-list for method output_type
+	13, // [13:24] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_dbosui_v1_workflows_proto_init() }
@@ -1422,8 +1930,8 @@ func file_dbosui_v1_workflows_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dbosui_v1_workflows_proto_rawDesc), len(file_dbosui_v1_workflows_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   22,
+			NumEnums:      2,
+			NumMessages:   28,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
