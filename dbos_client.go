@@ -16,6 +16,9 @@ type DBOSClient struct {
 	client dbos.Client
 	pool   *pgxpool.Pool
 	schema string
+
+	hub        *EventHub
+	listenStop context.CancelFunc
 }
 
 // NewDBOSClient creates a client that connects to the DBOS system database
@@ -43,8 +46,109 @@ func NewDBOSClient(ctx context.Context, databaseURL string) (*DBOSClient, error)
 
 // Shutdown closes the database connection.
 func (c *DBOSClient) Shutdown(timeout time.Duration) {
+	if c.listenStop != nil {
+		c.listenStop()
+	}
 	c.client.Shutdown(timeout)
 	c.pool.Close()
+}
+
+// AttachEventHub starts background goroutines that publish realtime hints to
+// hub. One goroutine LISTENs on the dbos_notifications_channel and
+// dbos_workflow_events_channel Postgres channels; a second ticker polls
+// MAX(updated_at) on workflow_status every 2s and emits a WORKFLOWS_CHANGED
+// hint when it advances. Both stop when Shutdown is called.
+func (c *DBOSClient) AttachEventHub(hub *EventHub) {
+	if c.hub != nil {
+		return // already attached
+	}
+	c.hub = hub
+	ctx, cancel := context.WithCancel(context.Background())
+	c.listenStop = cancel
+	go c.runPgListener(ctx, hub)
+	go c.runWorkflowTicker(ctx, hub)
+}
+
+// runPgListener acquires a dedicated connection, LISTENs on the DBOS
+// channels, and forwards each notification to the hub. Reconnects with
+// backoff on transient errors.
+func (c *DBOSClient) runPgListener(ctx context.Context, hub *EventHub) {
+	backoff := time.Second
+	for {
+		if ctx.Err() != nil {
+			return
+		}
+		conn, err := c.pool.Acquire(ctx)
+		if err != nil {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(backoff):
+				backoff = minDuration(backoff*2, 30*time.Second)
+				continue
+			}
+		}
+		backoff = time.Second
+
+		if _, err := conn.Exec(ctx, "LISTEN dbos_notifications_channel"); err != nil {
+			conn.Release()
+			continue
+		}
+		if _, err := conn.Exec(ctx, "LISTEN dbos_workflow_events_channel"); err != nil {
+			conn.Release()
+			continue
+		}
+
+		for {
+			notif, err := conn.Conn().WaitForNotification(ctx)
+			if err != nil {
+				conn.Release()
+				break
+			}
+			switch notif.Channel {
+			case "dbos_notifications_channel":
+				hub.Publish(StreamEvent{Kind: StreamEventNotificationAdded, At: time.Now()})
+			case "dbos_workflow_events_channel":
+				hub.Publish(StreamEvent{Kind: StreamEventWorkflowEventSet, At: time.Now()})
+			}
+		}
+	}
+}
+
+// runWorkflowTicker polls MAX(updated_at) on workflow_status to detect
+// changes — DBOS doesn't publish a Postgres NOTIFY when statuses transition,
+// so a 2-second poll is the cheapest way to surface change hints. A single
+// poll happens regardless of how many clients are subscribed.
+func (c *DBOSClient) runWorkflowTicker(ctx context.Context, hub *EventHub) {
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+	var lastMax int64
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			var maxUpdated int64
+			query := fmt.Sprintf(
+				"SELECT COALESCE(MAX(updated_at), 0) FROM %s.workflow_status",
+				c.schema,
+			)
+			if err := c.pool.QueryRow(ctx, query).Scan(&maxUpdated); err != nil {
+				continue
+			}
+			if maxUpdated > lastMax {
+				lastMax = maxUpdated
+				hub.Publish(StreamEvent{Kind: StreamEventWorkflowsChanged, At: time.Now()})
+			}
+		}
+	}
+}
+
+func minDuration(a, b time.Duration) time.Duration {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 func (c *DBOSClient) ListWorkflows(ctx context.Context, filter ListFilter) (*ListResult, error) {

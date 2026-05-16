@@ -13,9 +13,9 @@ import { BrowserRouter } from 'react-router-dom';
 import '@mantine/core/styles.css';
 import '@mantine/dates/styles.css';
 import '@mantine/notifications/styles.css';
-import '@mantine/code-highlight/styles.css';
 import 'mantine-datatable/styles.css';
-import 'highlight.js/styles/atom-one-dark.css';
+// @mantine/code-highlight/styles.css + highlight.js theme are imported from
+// the lazy-loaded JsonBlock so they ship in the WorkflowDetail chunk.
 
 import { hljs } from './lib/hljs';
 import { App } from './App';

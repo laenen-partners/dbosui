@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useMemo, useState } from 'react';
 import {
   ActionIcon,
   Badge,
@@ -50,7 +50,14 @@ import {
   truncate,
 } from '../lib/format';
 import { StatsBar } from '../components/StatsBar';
-import { WorkflowDetail } from '../components/WorkflowDetail';
+
+// Drawer contents pull in @mantine/code-highlight + highlight.js + the steps
+// timeline — lazy-load so they don't sit in the initial bundle.
+const WorkflowDetail = lazy(() =>
+  import('../components/WorkflowDetail').then((m) => ({
+    default: m.WorkflowDetail,
+  })),
+);
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
@@ -506,12 +513,14 @@ export function WorkflowsPage() {
         padding={0}
       >
         {f.selected && (
-          <WorkflowDetail
-            id={f.selected}
-            expanded={f.expanded}
-            onToggleExpand={() => update({ expanded: !f.expanded })}
-            onClose={() => update({ selected: null, expanded: false })}
-          />
+          <Suspense fallback={null}>
+            <WorkflowDetail
+              id={f.selected}
+              expanded={f.expanded}
+              onToggleExpand={() => update({ expanded: !f.expanded })}
+              onClose={() => update({ selected: null, expanded: false })}
+            />
+          </Suspense>
         )}
       </Drawer>
     </Stack>

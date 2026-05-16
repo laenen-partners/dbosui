@@ -63,6 +63,9 @@ const (
 	// WorkflowServiceListDistinctValuesProcedure is the fully-qualified name of the WorkflowService's
 	// ListDistinctValues RPC.
 	WorkflowServiceListDistinctValuesProcedure = "/dbosui.v1.WorkflowService/ListDistinctValues"
+	// WorkflowServiceSubscribeEventsProcedure is the fully-qualified name of the WorkflowService's
+	// SubscribeEvents RPC.
+	WorkflowServiceSubscribeEventsProcedure = "/dbosui.v1.WorkflowService/SubscribeEvents"
 	// WorkflowServiceCancelWorkflowProcedure is the fully-qualified name of the WorkflowService's
 	// CancelWorkflow RPC.
 	WorkflowServiceCancelWorkflowProcedure = "/dbosui.v1.WorkflowService/CancelWorkflow"
@@ -86,6 +89,10 @@ type WorkflowServiceClient interface {
 	ListNotifications(context.Context, *connect.Request[v1.ListNotificationsRequest]) (*connect.Response[v1.ListNotificationsResponse], error)
 	ListSchedules(context.Context, *connect.Request[v1.ListSchedulesRequest]) (*connect.Response[v1.ListSchedulesResponse], error)
 	ListDistinctValues(context.Context, *connect.Request[v1.ListDistinctValuesRequest]) (*connect.Response[v1.ListDistinctValuesResponse], error)
+	// Server-streaming subscription: emits hint events when workflow_status,
+	// notifications, or workflow_events change. Clients use the kind to
+	// invalidate the matching local cache.
+	SubscribeEvents(context.Context, *connect.Request[v1.SubscribeEventsRequest]) (*connect.ServerStreamForClient[v1.StreamEvent], error)
 	CancelWorkflow(context.Context, *connect.Request[v1.CancelWorkflowRequest]) (*connect.Response[v1.CancelWorkflowResponse], error)
 	ResumeWorkflow(context.Context, *connect.Request[v1.ResumeWorkflowRequest]) (*connect.Response[v1.ResumeWorkflowResponse], error)
 	DeleteWorkflow(context.Context, *connect.Request[v1.DeleteWorkflowRequest]) (*connect.Response[v1.DeleteWorkflowResponse], error)
@@ -162,6 +169,12 @@ func NewWorkflowServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(workflowServiceMethods.ByName("ListDistinctValues")),
 			connect.WithClientOptions(opts...),
 		),
+		subscribeEvents: connect.NewClient[v1.SubscribeEventsRequest, v1.StreamEvent](
+			httpClient,
+			baseURL+WorkflowServiceSubscribeEventsProcedure,
+			connect.WithSchema(workflowServiceMethods.ByName("SubscribeEvents")),
+			connect.WithClientOptions(opts...),
+		),
 		cancelWorkflow: connect.NewClient[v1.CancelWorkflowRequest, v1.CancelWorkflowResponse](
 			httpClient,
 			baseURL+WorkflowServiceCancelWorkflowProcedure,
@@ -195,6 +208,7 @@ type workflowServiceClient struct {
 	listNotifications  *connect.Client[v1.ListNotificationsRequest, v1.ListNotificationsResponse]
 	listSchedules      *connect.Client[v1.ListSchedulesRequest, v1.ListSchedulesResponse]
 	listDistinctValues *connect.Client[v1.ListDistinctValuesRequest, v1.ListDistinctValuesResponse]
+	subscribeEvents    *connect.Client[v1.SubscribeEventsRequest, v1.StreamEvent]
 	cancelWorkflow     *connect.Client[v1.CancelWorkflowRequest, v1.CancelWorkflowResponse]
 	resumeWorkflow     *connect.Client[v1.ResumeWorkflowRequest, v1.ResumeWorkflowResponse]
 	deleteWorkflow     *connect.Client[v1.DeleteWorkflowRequest, v1.DeleteWorkflowResponse]
@@ -250,6 +264,11 @@ func (c *workflowServiceClient) ListDistinctValues(ctx context.Context, req *con
 	return c.listDistinctValues.CallUnary(ctx, req)
 }
 
+// SubscribeEvents calls dbosui.v1.WorkflowService.SubscribeEvents.
+func (c *workflowServiceClient) SubscribeEvents(ctx context.Context, req *connect.Request[v1.SubscribeEventsRequest]) (*connect.ServerStreamForClient[v1.StreamEvent], error) {
+	return c.subscribeEvents.CallServerStream(ctx, req)
+}
+
 // CancelWorkflow calls dbosui.v1.WorkflowService.CancelWorkflow.
 func (c *workflowServiceClient) CancelWorkflow(ctx context.Context, req *connect.Request[v1.CancelWorkflowRequest]) (*connect.Response[v1.CancelWorkflowResponse], error) {
 	return c.cancelWorkflow.CallUnary(ctx, req)
@@ -277,6 +296,10 @@ type WorkflowServiceHandler interface {
 	ListNotifications(context.Context, *connect.Request[v1.ListNotificationsRequest]) (*connect.Response[v1.ListNotificationsResponse], error)
 	ListSchedules(context.Context, *connect.Request[v1.ListSchedulesRequest]) (*connect.Response[v1.ListSchedulesResponse], error)
 	ListDistinctValues(context.Context, *connect.Request[v1.ListDistinctValuesRequest]) (*connect.Response[v1.ListDistinctValuesResponse], error)
+	// Server-streaming subscription: emits hint events when workflow_status,
+	// notifications, or workflow_events change. Clients use the kind to
+	// invalidate the matching local cache.
+	SubscribeEvents(context.Context, *connect.Request[v1.SubscribeEventsRequest], *connect.ServerStream[v1.StreamEvent]) error
 	CancelWorkflow(context.Context, *connect.Request[v1.CancelWorkflowRequest]) (*connect.Response[v1.CancelWorkflowResponse], error)
 	ResumeWorkflow(context.Context, *connect.Request[v1.ResumeWorkflowRequest]) (*connect.Response[v1.ResumeWorkflowResponse], error)
 	DeleteWorkflow(context.Context, *connect.Request[v1.DeleteWorkflowRequest]) (*connect.Response[v1.DeleteWorkflowResponse], error)
@@ -349,6 +372,12 @@ func NewWorkflowServiceHandler(svc WorkflowServiceHandler, opts ...connect.Handl
 		connect.WithSchema(workflowServiceMethods.ByName("ListDistinctValues")),
 		connect.WithHandlerOptions(opts...),
 	)
+	workflowServiceSubscribeEventsHandler := connect.NewServerStreamHandler(
+		WorkflowServiceSubscribeEventsProcedure,
+		svc.SubscribeEvents,
+		connect.WithSchema(workflowServiceMethods.ByName("SubscribeEvents")),
+		connect.WithHandlerOptions(opts...),
+	)
 	workflowServiceCancelWorkflowHandler := connect.NewUnaryHandler(
 		WorkflowServiceCancelWorkflowProcedure,
 		svc.CancelWorkflow,
@@ -389,6 +418,8 @@ func NewWorkflowServiceHandler(svc WorkflowServiceHandler, opts ...connect.Handl
 			workflowServiceListSchedulesHandler.ServeHTTP(w, r)
 		case WorkflowServiceListDistinctValuesProcedure:
 			workflowServiceListDistinctValuesHandler.ServeHTTP(w, r)
+		case WorkflowServiceSubscribeEventsProcedure:
+			workflowServiceSubscribeEventsHandler.ServeHTTP(w, r)
 		case WorkflowServiceCancelWorkflowProcedure:
 			workflowServiceCancelWorkflowHandler.ServeHTTP(w, r)
 		case WorkflowServiceResumeWorkflowProcedure:
@@ -442,6 +473,10 @@ func (UnimplementedWorkflowServiceHandler) ListSchedules(context.Context, *conne
 
 func (UnimplementedWorkflowServiceHandler) ListDistinctValues(context.Context, *connect.Request[v1.ListDistinctValuesRequest]) (*connect.Response[v1.ListDistinctValuesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dbosui.v1.WorkflowService.ListDistinctValues is not implemented"))
+}
+
+func (UnimplementedWorkflowServiceHandler) SubscribeEvents(context.Context, *connect.Request[v1.SubscribeEventsRequest], *connect.ServerStream[v1.StreamEvent]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("dbosui.v1.WorkflowService.SubscribeEvents is not implemented"))
 }
 
 func (UnimplementedWorkflowServiceHandler) CancelWorkflow(context.Context, *connect.Request[v1.CancelWorkflowRequest]) (*connect.Response[v1.CancelWorkflowResponse], error) {

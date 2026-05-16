@@ -206,6 +206,26 @@ message DeleteWorkflowRequest {
 
 message DeleteWorkflowResponse {}
 
+// Realtime event hint streamed from the server. Clients invalidate the
+// matching client-side caches on receipt and refetch. Events are best-effort:
+// missing one is recoverable via the next periodic refresh.
+enum EventKind {
+  EVENT_KIND_UNSPECIFIED = 0;
+  EVENT_KIND_WORKFLOWS_CHANGED = 1;
+  EVENT_KIND_NOTIFICATION_ADDED = 2;
+  EVENT_KIND_WORKFLOW_EVENT_SET = 3;
+}
+
+message StreamEvent {
+  EventKind kind = 1;
+  // Optional context, populated when known.
+  string workflow_id = 2;
+  string topic = 3;
+  google.protobuf.Timestamp at = 4;
+}
+
+message SubscribeEventsRequest {}
+
 // Field on workflow_status that can be enumerated for filter dropdowns.
 enum WorkflowField {
   WORKFLOW_FIELD_UNSPECIFIED = 0;
@@ -235,6 +255,10 @@ service WorkflowService {
   rpc ListNotifications(ListNotificationsRequest) returns (ListNotificationsResponse);
   rpc ListSchedules(ListSchedulesRequest) returns (ListSchedulesResponse);
   rpc ListDistinctValues(ListDistinctValuesRequest) returns (ListDistinctValuesResponse);
+  // Server-streaming subscription: emits hint events when workflow_status,
+  // notifications, or workflow_events change. Clients use the kind to
+  // invalidate the matching local cache.
+  rpc SubscribeEvents(SubscribeEventsRequest) returns (stream StreamEvent);
   rpc CancelWorkflow(CancelWorkflowRequest) returns (CancelWorkflowResponse);
   rpc ResumeWorkflow(ResumeWorkflowRequest) returns (ResumeWorkflowResponse);
   rpc DeleteWorkflow(DeleteWorkflowRequest) returns (DeleteWorkflowResponse);

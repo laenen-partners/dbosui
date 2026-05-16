@@ -193,6 +193,16 @@ type mockClient struct {
 	workflows     []WorkflowInfo
 	notifications []Notification
 	schedules     []Schedule
+	hub           *EventHub
+}
+
+// AttachEventHub lets Handler() wire a hub so mock mutations publish hints.
+func (m *mockClient) AttachEventHub(hub *EventHub) { m.hub = hub }
+
+func (m *mockClient) publish(ev StreamEvent) {
+	if m.hub != nil {
+		m.hub.Publish(ev)
+	}
 }
 
 func newMockClient() *mockClient {
@@ -538,6 +548,7 @@ func (m *mockClient) CancelWorkflow(_ context.Context, id string) error {
 		if wf.ID == id {
 			m.workflows[i].Status = StatusCancelled
 			m.workflows[i].UpdatedAt = time.Now()
+			m.publish(StreamEvent{Kind: StreamEventWorkflowsChanged, WorkflowID: id, At: time.Now()})
 			return nil
 		}
 	}
@@ -549,6 +560,7 @@ func (m *mockClient) ResumeWorkflow(_ context.Context, id string) error {
 		if wf.ID == id {
 			m.workflows[i].Status = StatusPending
 			m.workflows[i].UpdatedAt = time.Now()
+			m.publish(StreamEvent{Kind: StreamEventWorkflowsChanged, WorkflowID: id, At: time.Now()})
 			return nil
 		}
 	}
@@ -559,6 +571,7 @@ func (m *mockClient) DeleteWorkflow(_ context.Context, id string) error {
 	for i, wf := range m.workflows {
 		if wf.ID == id {
 			m.workflows = append(m.workflows[:i], m.workflows[i+1:]...)
+			m.publish(StreamEvent{Kind: StreamEventWorkflowsChanged, WorkflowID: id, At: time.Now()})
 			return nil
 		}
 	}

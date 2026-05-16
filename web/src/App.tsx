@@ -1,8 +1,11 @@
+import { lazy, Suspense } from 'react';
 import {
   AppShell,
   Box,
+  Center,
   Container,
   Group,
+  Loader,
   Tabs,
   Text,
   Title,
@@ -16,15 +19,36 @@ import {
 } from '@tabler/icons-react';
 import { Link, Route, Routes, useLocation } from 'react-router-dom';
 
-import { NotificationsPage } from './pages/NotificationsPage';
-import { QueuesPage } from './pages/QueuesPage';
-import { SchedulesPage } from './pages/SchedulesPage';
+import { useEventStream } from './api/queries';
+// WorkflowsPage is the landing route — kept eager so the first paint is
+// useful. Secondary pages are code-split off the main bundle.
 import { WorkflowsPage } from './pages/WorkflowsPage';
 import { ThemeToggle } from './components/ThemeToggle';
+
+const QueuesPage = lazy(() =>
+  import('./pages/QueuesPage').then((m) => ({ default: m.QueuesPage })),
+);
+const SchedulesPage = lazy(() =>
+  import('./pages/SchedulesPage').then((m) => ({ default: m.SchedulesPage })),
+);
+const NotificationsPage = lazy(() =>
+  import('./pages/NotificationsPage').then((m) => ({
+    default: m.NotificationsPage,
+  })),
+);
+
+function RouteFallback() {
+  return (
+    <Center py="xl">
+      <Loader size="sm" />
+    </Center>
+  );
+}
 
 export function App() {
   const location = useLocation();
   const activeTab = location.pathname === '/' ? '/' : location.pathname;
+  useEventStream();
 
   return (
     <AppShell header={{ height: 60 }} padding={0}>
@@ -97,12 +121,14 @@ export function App() {
       </AppShell.Header>
       <AppShell.Main bg="var(--mantine-color-default-hover)">
         <Container size="xl" py="lg">
-          <Routes>
-            <Route path="/" element={<WorkflowsPage />} />
-            <Route path="/queues" element={<QueuesPage />} />
-            <Route path="/schedules" element={<SchedulesPage />} />
-            <Route path="/notifications" element={<NotificationsPage />} />
-          </Routes>
+          <Suspense fallback={<RouteFallback />}>
+            <Routes>
+              <Route path="/" element={<WorkflowsPage />} />
+              <Route path="/queues" element={<QueuesPage />} />
+              <Route path="/schedules" element={<SchedulesPage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+            </Routes>
+          </Suspense>
         </Container>
       </AppShell.Main>
     </AppShell>

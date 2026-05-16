@@ -15,6 +15,7 @@ import (
 // workflowService implements dbosuiv1connect.WorkflowServiceHandler.
 type workflowService struct {
 	client Client
+	hub    *EventHub // optional; nil disables SubscribeEvents
 }
 
 func (s *workflowService) ListWorkflows(ctx context.Context, req *connect.Request[dbosuiv1.ListWorkflowsRequest]) (*connect.Response[dbosuiv1.ListWorkflowsResponse], error) {
@@ -260,6 +261,51 @@ func (s *workflowService) DeleteWorkflow(ctx context.Context, req *connect.Reque
 		return nil, connectError(err)
 	}
 	return connect.NewResponse(&dbosuiv1.DeleteWorkflowResponse{}), nil
+}
+
+// SubscribeEvents is a server-streaming RPC that forwards hints from the
+// EventHub to a single client. The stream stays open until the client
+// disconnects or the context is cancelled.
+func (s *workflowService) SubscribeEvents(ctx context.Context, _ *connect.Request[dbosuiv1.SubscribeEventsRequest], stream *connect.ServerStream[dbosuiv1.StreamEvent]) error {
+	if s.hub == nil {
+		return connect.NewError(connect.CodeUnimplemented, fmt.Errorf("event hub not configured"))
+	}
+	ch := s.hub.Subscribe()
+	defer s.hub.Unsubscribe(ch)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case ev, ok := <-ch:
+			if !ok {
+				return nil
+			}
+			msg := &dbosuiv1.StreamEvent{
+				Kind:       streamEventKindToProto(ev.Kind),
+				WorkflowId: ev.WorkflowID,
+				Topic:      ev.Topic,
+			}
+			if !ev.At.IsZero() {
+				msg.At = timestamppb.New(ev.At)
+			}
+			if err := stream.Send(msg); err != nil {
+				return err
+			}
+		}
+	}
+}
+
+func streamEventKindToProto(k StreamEventKind) dbosuiv1.EventKind {
+	switch k {
+	case StreamEventWorkflowsChanged:
+		return dbosuiv1.EventKind_EVENT_KIND_WORKFLOWS_CHANGED
+	case StreamEventNotificationAdded:
+		return dbosuiv1.EventKind_EVENT_KIND_NOTIFICATION_ADDED
+	case StreamEventWorkflowEventSet:
+		return dbosuiv1.EventKind_EVENT_KIND_WORKFLOW_EVENT_SET
+	}
+	return dbosuiv1.EventKind_EVENT_KIND_UNSPECIFIED
 }
 
 func workflowToProto(wf WorkflowInfo) *dbosuiv1.Workflow {

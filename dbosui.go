@@ -28,6 +28,11 @@ type Config struct {
 
 	// ConnectOptions are passed through to the Connect-Go handler.
 	ConnectOptions []connect.HandlerOption
+
+	// EventHub, if non-nil, is used to fan out realtime change hints to
+	// SubscribeEvents subscribers. If nil, Handler creates one. Provide
+	// your own when you want to publish events from your own backend code.
+	EventHub *EventHub
 }
 
 func (c *Config) defaults() {
@@ -56,10 +61,19 @@ func (c *Config) defaults() {
 // against the same Connect service) use APIHandler instead.
 func Handler(cfg Config) http.Handler {
 	cfg.defaults()
+	if cfg.EventHub == nil {
+		cfg.EventHub = NewEventHub()
+	}
+
+	// If the client knows how to publish realtime events (DBOSClient or a
+	// MockClient), let it start a listener feeding the hub.
+	if pub, ok := cfg.Client.(eventPublisher); ok {
+		pub.AttachEventHub(cfg.EventHub)
+	}
 
 	r := chi.NewRouter()
 
-	apiPath, apiHandler := APIHandler(cfg.Client, cfg.ConnectOptions...)
+	apiPath, apiHandler := apiHandlerWithHub(cfg.Client, cfg.EventHub, cfg.ConnectOptions...)
 	// apiPath is "/dbosui.v1.WorkflowService/" — mount it under /api so the SPA
 	// can call relative URLs like "api/dbosui.v1.WorkflowService/ListWorkflows".
 	r.Mount("/api"+apiPath, http.StripPrefix("/api", apiHandler))
@@ -78,7 +92,21 @@ func Handler(cfg Config) http.Handler {
 //	path, h := dbosui.APIHandler(myClient)
 //	mux.Handle(path, h)
 func APIHandler(c Client, opts ...connect.HandlerOption) (string, http.Handler) {
-	return dbosuiv1connect.NewWorkflowServiceHandler(&workflowService{client: c}, opts...)
+	return apiHandlerWithHub(c, nil, opts...)
+}
+
+func apiHandlerWithHub(c Client, hub *EventHub, opts ...connect.HandlerOption) (string, http.Handler) {
+	return dbosuiv1connect.NewWorkflowServiceHandler(
+		&workflowService{client: c, hub: hub},
+		opts...,
+	)
+}
+
+// eventPublisher is implemented by clients that can feed an EventHub from
+// DB notifications or in-memory hooks. Handler() detects this at runtime
+// and wires the hub.
+type eventPublisher interface {
+	AttachEventHub(hub *EventHub)
 }
 
 // spaHandler serves the embedded SPA. index.html has its <base href> rewritten

@@ -83,6 +83,61 @@ func (WorkflowStatus) EnumDescriptor() ([]byte, []int) {
 	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{0}
 }
 
+// Realtime event hint streamed from the server. Clients invalidate the
+// matching client-side caches on receipt and refetch. Events are best-effort:
+// missing one is recoverable via the next periodic refresh.
+type EventKind int32
+
+const (
+	EventKind_EVENT_KIND_UNSPECIFIED        EventKind = 0
+	EventKind_EVENT_KIND_WORKFLOWS_CHANGED  EventKind = 1
+	EventKind_EVENT_KIND_NOTIFICATION_ADDED EventKind = 2
+	EventKind_EVENT_KIND_WORKFLOW_EVENT_SET EventKind = 3
+)
+
+// Enum value maps for EventKind.
+var (
+	EventKind_name = map[int32]string{
+		0: "EVENT_KIND_UNSPECIFIED",
+		1: "EVENT_KIND_WORKFLOWS_CHANGED",
+		2: "EVENT_KIND_NOTIFICATION_ADDED",
+		3: "EVENT_KIND_WORKFLOW_EVENT_SET",
+	}
+	EventKind_value = map[string]int32{
+		"EVENT_KIND_UNSPECIFIED":        0,
+		"EVENT_KIND_WORKFLOWS_CHANGED":  1,
+		"EVENT_KIND_NOTIFICATION_ADDED": 2,
+		"EVENT_KIND_WORKFLOW_EVENT_SET": 3,
+	}
+)
+
+func (x EventKind) Enum() *EventKind {
+	p := new(EventKind)
+	*p = x
+	return p
+}
+
+func (x EventKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (EventKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_dbosui_v1_workflows_proto_enumTypes[1].Descriptor()
+}
+
+func (EventKind) Type() protoreflect.EnumType {
+	return &file_dbosui_v1_workflows_proto_enumTypes[1]
+}
+
+func (x EventKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use EventKind.Descriptor instead.
+func (EventKind) EnumDescriptor() ([]byte, []int) {
+	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{1}
+}
+
 // Field on workflow_status that can be enumerated for filter dropdowns.
 type WorkflowField int32
 
@@ -126,11 +181,11 @@ func (x WorkflowField) String() string {
 }
 
 func (WorkflowField) Descriptor() protoreflect.EnumDescriptor {
-	return file_dbosui_v1_workflows_proto_enumTypes[1].Descriptor()
+	return file_dbosui_v1_workflows_proto_enumTypes[2].Descriptor()
 }
 
 func (WorkflowField) Type() protoreflect.EnumType {
-	return &file_dbosui_v1_workflows_proto_enumTypes[1]
+	return &file_dbosui_v1_workflows_proto_enumTypes[2]
 }
 
 func (x WorkflowField) Number() protoreflect.EnumNumber {
@@ -139,7 +194,7 @@ func (x WorkflowField) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use WorkflowField.Descriptor instead.
 func (WorkflowField) EnumDescriptor() ([]byte, []int) {
-	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{1}
+	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{2}
 }
 
 type Workflow struct {
@@ -2017,6 +2072,111 @@ func (*DeleteWorkflowResponse) Descriptor() ([]byte, []int) {
 	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{31}
 }
 
+type StreamEvent struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Kind  EventKind              `protobuf:"varint,1,opt,name=kind,proto3,enum=dbosui.v1.EventKind" json:"kind,omitempty"`
+	// Optional context, populated when known.
+	WorkflowId    string                 `protobuf:"bytes,2,opt,name=workflow_id,json=workflowId,proto3" json:"workflow_id,omitempty"`
+	Topic         string                 `protobuf:"bytes,3,opt,name=topic,proto3" json:"topic,omitempty"`
+	At            *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=at,proto3" json:"at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StreamEvent) Reset() {
+	*x = StreamEvent{}
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StreamEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StreamEvent) ProtoMessage() {}
+
+func (x *StreamEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StreamEvent.ProtoReflect.Descriptor instead.
+func (*StreamEvent) Descriptor() ([]byte, []int) {
+	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *StreamEvent) GetKind() EventKind {
+	if x != nil {
+		return x.Kind
+	}
+	return EventKind_EVENT_KIND_UNSPECIFIED
+}
+
+func (x *StreamEvent) GetWorkflowId() string {
+	if x != nil {
+		return x.WorkflowId
+	}
+	return ""
+}
+
+func (x *StreamEvent) GetTopic() string {
+	if x != nil {
+		return x.Topic
+	}
+	return ""
+}
+
+func (x *StreamEvent) GetAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.At
+	}
+	return nil
+}
+
+type SubscribeEventsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SubscribeEventsRequest) Reset() {
+	*x = SubscribeEventsRequest{}
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SubscribeEventsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SubscribeEventsRequest) ProtoMessage() {}
+
+func (x *SubscribeEventsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SubscribeEventsRequest.ProtoReflect.Descriptor instead.
+func (*SubscribeEventsRequest) Descriptor() ([]byte, []int) {
+	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{33}
+}
+
 type ListDistinctValuesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Field         WorkflowField          `protobuf:"varint,1,opt,name=field,proto3,enum=dbosui.v1.WorkflowField" json:"field,omitempty"`
@@ -2026,7 +2186,7 @@ type ListDistinctValuesRequest struct {
 
 func (x *ListDistinctValuesRequest) Reset() {
 	*x = ListDistinctValuesRequest{}
-	mi := &file_dbosui_v1_workflows_proto_msgTypes[32]
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2038,7 +2198,7 @@ func (x *ListDistinctValuesRequest) String() string {
 func (*ListDistinctValuesRequest) ProtoMessage() {}
 
 func (x *ListDistinctValuesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dbosui_v1_workflows_proto_msgTypes[32]
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2051,7 +2211,7 @@ func (x *ListDistinctValuesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDistinctValuesRequest.ProtoReflect.Descriptor instead.
 func (*ListDistinctValuesRequest) Descriptor() ([]byte, []int) {
-	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{32}
+	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *ListDistinctValuesRequest) GetField() WorkflowField {
@@ -2070,7 +2230,7 @@ type ListDistinctValuesResponse struct {
 
 func (x *ListDistinctValuesResponse) Reset() {
 	*x = ListDistinctValuesResponse{}
-	mi := &file_dbosui_v1_workflows_proto_msgTypes[33]
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2082,7 +2242,7 @@ func (x *ListDistinctValuesResponse) String() string {
 func (*ListDistinctValuesResponse) ProtoMessage() {}
 
 func (x *ListDistinctValuesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dbosui_v1_workflows_proto_msgTypes[33]
+	mi := &file_dbosui_v1_workflows_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2095,7 +2255,7 @@ func (x *ListDistinctValuesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDistinctValuesResponse.ProtoReflect.Descriptor instead.
 func (*ListDistinctValuesResponse) Descriptor() ([]byte, []int) {
-	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{33}
+	return file_dbosui_v1_workflows_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *ListDistinctValuesResponse) GetValues() []string {
@@ -2248,7 +2408,14 @@ const file_dbosui_v1_workflows_proto_rawDesc = "" +
 	"\x16ResumeWorkflowResponse\"'\n" +
 	"\x15DeleteWorkflowRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"\x18\n" +
-	"\x16DeleteWorkflowResponse\"K\n" +
+	"\x16DeleteWorkflowResponse\"\x9a\x01\n" +
+	"\vStreamEvent\x12(\n" +
+	"\x04kind\x18\x01 \x01(\x0e2\x14.dbosui.v1.EventKindR\x04kind\x12\x1f\n" +
+	"\vworkflow_id\x18\x02 \x01(\tR\n" +
+	"workflowId\x12\x14\n" +
+	"\x05topic\x18\x03 \x01(\tR\x05topic\x12*\n" +
+	"\x02at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x02at\"\x18\n" +
+	"\x16SubscribeEventsRequest\"K\n" +
 	"\x19ListDistinctValuesRequest\x12.\n" +
 	"\x05field\x18\x01 \x01(\x0e2\x18.dbosui.v1.WorkflowFieldR\x05field\"4\n" +
 	"\x1aListDistinctValuesResponse\x12\x16\n" +
@@ -2260,14 +2427,19 @@ const file_dbosui_v1_workflows_proto_rawDesc = "" +
 	"\x17WORKFLOW_STATUS_SUCCESS\x10\x03\x12\x19\n" +
 	"\x15WORKFLOW_STATUS_ERROR\x10\x04\x12\x1d\n" +
 	"\x19WORKFLOW_STATUS_CANCELLED\x10\x05\x12(\n" +
-	"$WORKFLOW_STATUS_MAX_RETRIES_EXCEEDED\x10\x06*\xd6\x01\n" +
+	"$WORKFLOW_STATUS_MAX_RETRIES_EXCEEDED\x10\x06*\x8f\x01\n" +
+	"\tEventKind\x12\x1a\n" +
+	"\x16EVENT_KIND_UNSPECIFIED\x10\x00\x12 \n" +
+	"\x1cEVENT_KIND_WORKFLOWS_CHANGED\x10\x01\x12!\n" +
+	"\x1dEVENT_KIND_NOTIFICATION_ADDED\x10\x02\x12!\n" +
+	"\x1dEVENT_KIND_WORKFLOW_EVENT_SET\x10\x03*\xd6\x01\n" +
 	"\rWorkflowField\x12\x1e\n" +
 	"\x1aWORKFLOW_FIELD_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13WORKFLOW_FIELD_NAME\x10\x01\x12\x1d\n" +
 	"\x19WORKFLOW_FIELD_QUEUE_NAME\x10\x02\x12\x1e\n" +
 	"\x1aWORKFLOW_FIELD_EXECUTOR_ID\x10\x03\x12&\n" +
 	"\"WORKFLOW_FIELD_APPLICATION_VERSION\x10\x04\x12%\n" +
-	"!WORKFLOW_FIELD_AUTHENTICATED_USER\x10\x052\xf6\b\n" +
+	"!WORKFLOW_FIELD_AUTHENTICATED_USER\x10\x052\xc6\t\n" +
 	"\x0fWorkflowService\x12R\n" +
 	"\rListWorkflows\x12\x1f.dbosui.v1.ListWorkflowsRequest\x1a .dbosui.v1.ListWorkflowsResponse\x12L\n" +
 	"\vGetWorkflow\x12\x1d.dbosui.v1.GetWorkflowRequest\x1a\x1e.dbosui.v1.GetWorkflowResponse\x12[\n" +
@@ -2278,7 +2450,8 @@ const file_dbosui_v1_workflows_proto_rawDesc = "" +
 	"\x0eListQueueStats\x12 .dbosui.v1.ListQueueStatsRequest\x1a!.dbosui.v1.ListQueueStatsResponse\x12^\n" +
 	"\x11ListNotifications\x12#.dbosui.v1.ListNotificationsRequest\x1a$.dbosui.v1.ListNotificationsResponse\x12R\n" +
 	"\rListSchedules\x12\x1f.dbosui.v1.ListSchedulesRequest\x1a .dbosui.v1.ListSchedulesResponse\x12a\n" +
-	"\x12ListDistinctValues\x12$.dbosui.v1.ListDistinctValuesRequest\x1a%.dbosui.v1.ListDistinctValuesResponse\x12U\n" +
+	"\x12ListDistinctValues\x12$.dbosui.v1.ListDistinctValuesRequest\x1a%.dbosui.v1.ListDistinctValuesResponse\x12N\n" +
+	"\x0fSubscribeEvents\x12!.dbosui.v1.SubscribeEventsRequest\x1a\x16.dbosui.v1.StreamEvent0\x01\x12U\n" +
 	"\x0eCancelWorkflow\x12 .dbosui.v1.CancelWorkflowRequest\x1a!.dbosui.v1.CancelWorkflowResponse\x12U\n" +
 	"\x0eResumeWorkflow\x12 .dbosui.v1.ResumeWorkflowRequest\x1a!.dbosui.v1.ResumeWorkflowResponse\x12U\n" +
 	"\x0eDeleteWorkflow\x12 .dbosui.v1.DeleteWorkflowRequest\x1a!.dbosui.v1.DeleteWorkflowResponseB=Z;github.com/laenen-partners/dbosui/gen/go/dbosui/v1;dbosuiv1b\x06proto3"
@@ -2295,100 +2468,107 @@ func file_dbosui_v1_workflows_proto_rawDescGZIP() []byte {
 	return file_dbosui_v1_workflows_proto_rawDescData
 }
 
-var file_dbosui_v1_workflows_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_dbosui_v1_workflows_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
+var file_dbosui_v1_workflows_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_dbosui_v1_workflows_proto_msgTypes = make([]protoimpl.MessageInfo, 36)
 var file_dbosui_v1_workflows_proto_goTypes = []any{
 	(WorkflowStatus)(0),                // 0: dbosui.v1.WorkflowStatus
-	(WorkflowField)(0),                 // 1: dbosui.v1.WorkflowField
-	(*Workflow)(nil),                   // 2: dbosui.v1.Workflow
-	(*Step)(nil),                       // 3: dbosui.v1.Step
-	(*Event)(nil),                      // 4: dbosui.v1.Event
-	(*Stats)(nil),                      // 5: dbosui.v1.Stats
-	(*ListWorkflowsRequest)(nil),       // 6: dbosui.v1.ListWorkflowsRequest
-	(*ListWorkflowsResponse)(nil),      // 7: dbosui.v1.ListWorkflowsResponse
-	(*GetWorkflowRequest)(nil),         // 8: dbosui.v1.GetWorkflowRequest
-	(*GetWorkflowResponse)(nil),        // 9: dbosui.v1.GetWorkflowResponse
-	(*GetWorkflowStepsRequest)(nil),    // 10: dbosui.v1.GetWorkflowStepsRequest
-	(*GetWorkflowStepsResponse)(nil),   // 11: dbosui.v1.GetWorkflowStepsResponse
-	(*GetWorkflowEventsRequest)(nil),   // 12: dbosui.v1.GetWorkflowEventsRequest
-	(*GetWorkflowEventsResponse)(nil),  // 13: dbosui.v1.GetWorkflowEventsResponse
-	(*GetStatsRequest)(nil),            // 14: dbosui.v1.GetStatsRequest
-	(*GetStatsResponse)(nil),           // 15: dbosui.v1.GetStatsResponse
-	(*ActivityBucket)(nil),             // 16: dbosui.v1.ActivityBucket
-	(*GetActivityRequest)(nil),         // 17: dbosui.v1.GetActivityRequest
-	(*GetActivityResponse)(nil),        // 18: dbosui.v1.GetActivityResponse
-	(*QueueStats)(nil),                 // 19: dbosui.v1.QueueStats
-	(*ListQueueStatsRequest)(nil),      // 20: dbosui.v1.ListQueueStatsRequest
-	(*ListQueueStatsResponse)(nil),     // 21: dbosui.v1.ListQueueStatsResponse
-	(*Notification)(nil),               // 22: dbosui.v1.Notification
-	(*ListNotificationsRequest)(nil),   // 23: dbosui.v1.ListNotificationsRequest
-	(*ListNotificationsResponse)(nil),  // 24: dbosui.v1.ListNotificationsResponse
-	(*Schedule)(nil),                   // 25: dbosui.v1.Schedule
-	(*ListSchedulesRequest)(nil),       // 26: dbosui.v1.ListSchedulesRequest
-	(*ListSchedulesResponse)(nil),      // 27: dbosui.v1.ListSchedulesResponse
-	(*CancelWorkflowRequest)(nil),      // 28: dbosui.v1.CancelWorkflowRequest
-	(*CancelWorkflowResponse)(nil),     // 29: dbosui.v1.CancelWorkflowResponse
-	(*ResumeWorkflowRequest)(nil),      // 30: dbosui.v1.ResumeWorkflowRequest
-	(*ResumeWorkflowResponse)(nil),     // 31: dbosui.v1.ResumeWorkflowResponse
-	(*DeleteWorkflowRequest)(nil),      // 32: dbosui.v1.DeleteWorkflowRequest
-	(*DeleteWorkflowResponse)(nil),     // 33: dbosui.v1.DeleteWorkflowResponse
-	(*ListDistinctValuesRequest)(nil),  // 34: dbosui.v1.ListDistinctValuesRequest
-	(*ListDistinctValuesResponse)(nil), // 35: dbosui.v1.ListDistinctValuesResponse
-	(*timestamppb.Timestamp)(nil),      // 36: google.protobuf.Timestamp
+	(EventKind)(0),                     // 1: dbosui.v1.EventKind
+	(WorkflowField)(0),                 // 2: dbosui.v1.WorkflowField
+	(*Workflow)(nil),                   // 3: dbosui.v1.Workflow
+	(*Step)(nil),                       // 4: dbosui.v1.Step
+	(*Event)(nil),                      // 5: dbosui.v1.Event
+	(*Stats)(nil),                      // 6: dbosui.v1.Stats
+	(*ListWorkflowsRequest)(nil),       // 7: dbosui.v1.ListWorkflowsRequest
+	(*ListWorkflowsResponse)(nil),      // 8: dbosui.v1.ListWorkflowsResponse
+	(*GetWorkflowRequest)(nil),         // 9: dbosui.v1.GetWorkflowRequest
+	(*GetWorkflowResponse)(nil),        // 10: dbosui.v1.GetWorkflowResponse
+	(*GetWorkflowStepsRequest)(nil),    // 11: dbosui.v1.GetWorkflowStepsRequest
+	(*GetWorkflowStepsResponse)(nil),   // 12: dbosui.v1.GetWorkflowStepsResponse
+	(*GetWorkflowEventsRequest)(nil),   // 13: dbosui.v1.GetWorkflowEventsRequest
+	(*GetWorkflowEventsResponse)(nil),  // 14: dbosui.v1.GetWorkflowEventsResponse
+	(*GetStatsRequest)(nil),            // 15: dbosui.v1.GetStatsRequest
+	(*GetStatsResponse)(nil),           // 16: dbosui.v1.GetStatsResponse
+	(*ActivityBucket)(nil),             // 17: dbosui.v1.ActivityBucket
+	(*GetActivityRequest)(nil),         // 18: dbosui.v1.GetActivityRequest
+	(*GetActivityResponse)(nil),        // 19: dbosui.v1.GetActivityResponse
+	(*QueueStats)(nil),                 // 20: dbosui.v1.QueueStats
+	(*ListQueueStatsRequest)(nil),      // 21: dbosui.v1.ListQueueStatsRequest
+	(*ListQueueStatsResponse)(nil),     // 22: dbosui.v1.ListQueueStatsResponse
+	(*Notification)(nil),               // 23: dbosui.v1.Notification
+	(*ListNotificationsRequest)(nil),   // 24: dbosui.v1.ListNotificationsRequest
+	(*ListNotificationsResponse)(nil),  // 25: dbosui.v1.ListNotificationsResponse
+	(*Schedule)(nil),                   // 26: dbosui.v1.Schedule
+	(*ListSchedulesRequest)(nil),       // 27: dbosui.v1.ListSchedulesRequest
+	(*ListSchedulesResponse)(nil),      // 28: dbosui.v1.ListSchedulesResponse
+	(*CancelWorkflowRequest)(nil),      // 29: dbosui.v1.CancelWorkflowRequest
+	(*CancelWorkflowResponse)(nil),     // 30: dbosui.v1.CancelWorkflowResponse
+	(*ResumeWorkflowRequest)(nil),      // 31: dbosui.v1.ResumeWorkflowRequest
+	(*ResumeWorkflowResponse)(nil),     // 32: dbosui.v1.ResumeWorkflowResponse
+	(*DeleteWorkflowRequest)(nil),      // 33: dbosui.v1.DeleteWorkflowRequest
+	(*DeleteWorkflowResponse)(nil),     // 34: dbosui.v1.DeleteWorkflowResponse
+	(*StreamEvent)(nil),                // 35: dbosui.v1.StreamEvent
+	(*SubscribeEventsRequest)(nil),     // 36: dbosui.v1.SubscribeEventsRequest
+	(*ListDistinctValuesRequest)(nil),  // 37: dbosui.v1.ListDistinctValuesRequest
+	(*ListDistinctValuesResponse)(nil), // 38: dbosui.v1.ListDistinctValuesResponse
+	(*timestamppb.Timestamp)(nil),      // 39: google.protobuf.Timestamp
 }
 var file_dbosui_v1_workflows_proto_depIdxs = []int32{
 	0,  // 0: dbosui.v1.Workflow.status:type_name -> dbosui.v1.WorkflowStatus
-	36, // 1: dbosui.v1.Workflow.created_at:type_name -> google.protobuf.Timestamp
-	36, // 2: dbosui.v1.Workflow.updated_at:type_name -> google.protobuf.Timestamp
-	36, // 3: dbosui.v1.Step.started_at:type_name -> google.protobuf.Timestamp
-	36, // 4: dbosui.v1.Step.completed_at:type_name -> google.protobuf.Timestamp
+	39, // 1: dbosui.v1.Workflow.created_at:type_name -> google.protobuf.Timestamp
+	39, // 2: dbosui.v1.Workflow.updated_at:type_name -> google.protobuf.Timestamp
+	39, // 3: dbosui.v1.Step.started_at:type_name -> google.protobuf.Timestamp
+	39, // 4: dbosui.v1.Step.completed_at:type_name -> google.protobuf.Timestamp
 	0,  // 5: dbosui.v1.ListWorkflowsRequest.statuses:type_name -> dbosui.v1.WorkflowStatus
-	36, // 6: dbosui.v1.ListWorkflowsRequest.created_after:type_name -> google.protobuf.Timestamp
-	36, // 7: dbosui.v1.ListWorkflowsRequest.created_before:type_name -> google.protobuf.Timestamp
-	2,  // 8: dbosui.v1.ListWorkflowsResponse.workflows:type_name -> dbosui.v1.Workflow
-	2,  // 9: dbosui.v1.GetWorkflowResponse.workflow:type_name -> dbosui.v1.Workflow
-	3,  // 10: dbosui.v1.GetWorkflowStepsResponse.steps:type_name -> dbosui.v1.Step
-	4,  // 11: dbosui.v1.GetWorkflowEventsResponse.events:type_name -> dbosui.v1.Event
-	5,  // 12: dbosui.v1.GetStatsResponse.stats:type_name -> dbosui.v1.Stats
-	36, // 13: dbosui.v1.ActivityBucket.end_time:type_name -> google.protobuf.Timestamp
-	16, // 14: dbosui.v1.GetActivityResponse.buckets:type_name -> dbosui.v1.ActivityBucket
-	19, // 15: dbosui.v1.ListQueueStatsResponse.queues:type_name -> dbosui.v1.QueueStats
-	36, // 16: dbosui.v1.Notification.created_at:type_name -> google.protobuf.Timestamp
-	22, // 17: dbosui.v1.ListNotificationsResponse.notifications:type_name -> dbosui.v1.Notification
-	36, // 18: dbosui.v1.Schedule.last_fired_at:type_name -> google.protobuf.Timestamp
-	25, // 19: dbosui.v1.ListSchedulesResponse.schedules:type_name -> dbosui.v1.Schedule
-	1,  // 20: dbosui.v1.ListDistinctValuesRequest.field:type_name -> dbosui.v1.WorkflowField
-	6,  // 21: dbosui.v1.WorkflowService.ListWorkflows:input_type -> dbosui.v1.ListWorkflowsRequest
-	8,  // 22: dbosui.v1.WorkflowService.GetWorkflow:input_type -> dbosui.v1.GetWorkflowRequest
-	10, // 23: dbosui.v1.WorkflowService.GetWorkflowSteps:input_type -> dbosui.v1.GetWorkflowStepsRequest
-	12, // 24: dbosui.v1.WorkflowService.GetWorkflowEvents:input_type -> dbosui.v1.GetWorkflowEventsRequest
-	14, // 25: dbosui.v1.WorkflowService.GetStats:input_type -> dbosui.v1.GetStatsRequest
-	17, // 26: dbosui.v1.WorkflowService.GetActivity:input_type -> dbosui.v1.GetActivityRequest
-	20, // 27: dbosui.v1.WorkflowService.ListQueueStats:input_type -> dbosui.v1.ListQueueStatsRequest
-	23, // 28: dbosui.v1.WorkflowService.ListNotifications:input_type -> dbosui.v1.ListNotificationsRequest
-	26, // 29: dbosui.v1.WorkflowService.ListSchedules:input_type -> dbosui.v1.ListSchedulesRequest
-	34, // 30: dbosui.v1.WorkflowService.ListDistinctValues:input_type -> dbosui.v1.ListDistinctValuesRequest
-	28, // 31: dbosui.v1.WorkflowService.CancelWorkflow:input_type -> dbosui.v1.CancelWorkflowRequest
-	30, // 32: dbosui.v1.WorkflowService.ResumeWorkflow:input_type -> dbosui.v1.ResumeWorkflowRequest
-	32, // 33: dbosui.v1.WorkflowService.DeleteWorkflow:input_type -> dbosui.v1.DeleteWorkflowRequest
-	7,  // 34: dbosui.v1.WorkflowService.ListWorkflows:output_type -> dbosui.v1.ListWorkflowsResponse
-	9,  // 35: dbosui.v1.WorkflowService.GetWorkflow:output_type -> dbosui.v1.GetWorkflowResponse
-	11, // 36: dbosui.v1.WorkflowService.GetWorkflowSteps:output_type -> dbosui.v1.GetWorkflowStepsResponse
-	13, // 37: dbosui.v1.WorkflowService.GetWorkflowEvents:output_type -> dbosui.v1.GetWorkflowEventsResponse
-	15, // 38: dbosui.v1.WorkflowService.GetStats:output_type -> dbosui.v1.GetStatsResponse
-	18, // 39: dbosui.v1.WorkflowService.GetActivity:output_type -> dbosui.v1.GetActivityResponse
-	21, // 40: dbosui.v1.WorkflowService.ListQueueStats:output_type -> dbosui.v1.ListQueueStatsResponse
-	24, // 41: dbosui.v1.WorkflowService.ListNotifications:output_type -> dbosui.v1.ListNotificationsResponse
-	27, // 42: dbosui.v1.WorkflowService.ListSchedules:output_type -> dbosui.v1.ListSchedulesResponse
-	35, // 43: dbosui.v1.WorkflowService.ListDistinctValues:output_type -> dbosui.v1.ListDistinctValuesResponse
-	29, // 44: dbosui.v1.WorkflowService.CancelWorkflow:output_type -> dbosui.v1.CancelWorkflowResponse
-	31, // 45: dbosui.v1.WorkflowService.ResumeWorkflow:output_type -> dbosui.v1.ResumeWorkflowResponse
-	33, // 46: dbosui.v1.WorkflowService.DeleteWorkflow:output_type -> dbosui.v1.DeleteWorkflowResponse
-	34, // [34:47] is the sub-list for method output_type
-	21, // [21:34] is the sub-list for method input_type
-	21, // [21:21] is the sub-list for extension type_name
-	21, // [21:21] is the sub-list for extension extendee
-	0,  // [0:21] is the sub-list for field type_name
+	39, // 6: dbosui.v1.ListWorkflowsRequest.created_after:type_name -> google.protobuf.Timestamp
+	39, // 7: dbosui.v1.ListWorkflowsRequest.created_before:type_name -> google.protobuf.Timestamp
+	3,  // 8: dbosui.v1.ListWorkflowsResponse.workflows:type_name -> dbosui.v1.Workflow
+	3,  // 9: dbosui.v1.GetWorkflowResponse.workflow:type_name -> dbosui.v1.Workflow
+	4,  // 10: dbosui.v1.GetWorkflowStepsResponse.steps:type_name -> dbosui.v1.Step
+	5,  // 11: dbosui.v1.GetWorkflowEventsResponse.events:type_name -> dbosui.v1.Event
+	6,  // 12: dbosui.v1.GetStatsResponse.stats:type_name -> dbosui.v1.Stats
+	39, // 13: dbosui.v1.ActivityBucket.end_time:type_name -> google.protobuf.Timestamp
+	17, // 14: dbosui.v1.GetActivityResponse.buckets:type_name -> dbosui.v1.ActivityBucket
+	20, // 15: dbosui.v1.ListQueueStatsResponse.queues:type_name -> dbosui.v1.QueueStats
+	39, // 16: dbosui.v1.Notification.created_at:type_name -> google.protobuf.Timestamp
+	23, // 17: dbosui.v1.ListNotificationsResponse.notifications:type_name -> dbosui.v1.Notification
+	39, // 18: dbosui.v1.Schedule.last_fired_at:type_name -> google.protobuf.Timestamp
+	26, // 19: dbosui.v1.ListSchedulesResponse.schedules:type_name -> dbosui.v1.Schedule
+	1,  // 20: dbosui.v1.StreamEvent.kind:type_name -> dbosui.v1.EventKind
+	39, // 21: dbosui.v1.StreamEvent.at:type_name -> google.protobuf.Timestamp
+	2,  // 22: dbosui.v1.ListDistinctValuesRequest.field:type_name -> dbosui.v1.WorkflowField
+	7,  // 23: dbosui.v1.WorkflowService.ListWorkflows:input_type -> dbosui.v1.ListWorkflowsRequest
+	9,  // 24: dbosui.v1.WorkflowService.GetWorkflow:input_type -> dbosui.v1.GetWorkflowRequest
+	11, // 25: dbosui.v1.WorkflowService.GetWorkflowSteps:input_type -> dbosui.v1.GetWorkflowStepsRequest
+	13, // 26: dbosui.v1.WorkflowService.GetWorkflowEvents:input_type -> dbosui.v1.GetWorkflowEventsRequest
+	15, // 27: dbosui.v1.WorkflowService.GetStats:input_type -> dbosui.v1.GetStatsRequest
+	18, // 28: dbosui.v1.WorkflowService.GetActivity:input_type -> dbosui.v1.GetActivityRequest
+	21, // 29: dbosui.v1.WorkflowService.ListQueueStats:input_type -> dbosui.v1.ListQueueStatsRequest
+	24, // 30: dbosui.v1.WorkflowService.ListNotifications:input_type -> dbosui.v1.ListNotificationsRequest
+	27, // 31: dbosui.v1.WorkflowService.ListSchedules:input_type -> dbosui.v1.ListSchedulesRequest
+	37, // 32: dbosui.v1.WorkflowService.ListDistinctValues:input_type -> dbosui.v1.ListDistinctValuesRequest
+	36, // 33: dbosui.v1.WorkflowService.SubscribeEvents:input_type -> dbosui.v1.SubscribeEventsRequest
+	29, // 34: dbosui.v1.WorkflowService.CancelWorkflow:input_type -> dbosui.v1.CancelWorkflowRequest
+	31, // 35: dbosui.v1.WorkflowService.ResumeWorkflow:input_type -> dbosui.v1.ResumeWorkflowRequest
+	33, // 36: dbosui.v1.WorkflowService.DeleteWorkflow:input_type -> dbosui.v1.DeleteWorkflowRequest
+	8,  // 37: dbosui.v1.WorkflowService.ListWorkflows:output_type -> dbosui.v1.ListWorkflowsResponse
+	10, // 38: dbosui.v1.WorkflowService.GetWorkflow:output_type -> dbosui.v1.GetWorkflowResponse
+	12, // 39: dbosui.v1.WorkflowService.GetWorkflowSteps:output_type -> dbosui.v1.GetWorkflowStepsResponse
+	14, // 40: dbosui.v1.WorkflowService.GetWorkflowEvents:output_type -> dbosui.v1.GetWorkflowEventsResponse
+	16, // 41: dbosui.v1.WorkflowService.GetStats:output_type -> dbosui.v1.GetStatsResponse
+	19, // 42: dbosui.v1.WorkflowService.GetActivity:output_type -> dbosui.v1.GetActivityResponse
+	22, // 43: dbosui.v1.WorkflowService.ListQueueStats:output_type -> dbosui.v1.ListQueueStatsResponse
+	25, // 44: dbosui.v1.WorkflowService.ListNotifications:output_type -> dbosui.v1.ListNotificationsResponse
+	28, // 45: dbosui.v1.WorkflowService.ListSchedules:output_type -> dbosui.v1.ListSchedulesResponse
+	38, // 46: dbosui.v1.WorkflowService.ListDistinctValues:output_type -> dbosui.v1.ListDistinctValuesResponse
+	35, // 47: dbosui.v1.WorkflowService.SubscribeEvents:output_type -> dbosui.v1.StreamEvent
+	30, // 48: dbosui.v1.WorkflowService.CancelWorkflow:output_type -> dbosui.v1.CancelWorkflowResponse
+	32, // 49: dbosui.v1.WorkflowService.ResumeWorkflow:output_type -> dbosui.v1.ResumeWorkflowResponse
+	34, // 50: dbosui.v1.WorkflowService.DeleteWorkflow:output_type -> dbosui.v1.DeleteWorkflowResponse
+	37, // [37:51] is the sub-list for method output_type
+	23, // [23:37] is the sub-list for method input_type
+	23, // [23:23] is the sub-list for extension type_name
+	23, // [23:23] is the sub-list for extension extendee
+	0,  // [0:23] is the sub-list for field type_name
 }
 
 func init() { file_dbosui_v1_workflows_proto_init() }
@@ -2401,8 +2581,8 @@ func file_dbosui_v1_workflows_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dbosui_v1_workflows_proto_rawDesc), len(file_dbosui_v1_workflows_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   34,
+			NumEnums:      3,
+			NumMessages:   36,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

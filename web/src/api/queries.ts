@@ -1,9 +1,14 @@
+import { useEffect } from 'react';
 import { timestampFromDate } from '@bufbuild/protobuf/wkt';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { notifications } from '@mantine/notifications';
 
 import { workflowClient } from './client.js';
-import type { WorkflowField, WorkflowStatus } from '../gen/dbosui/v1/workflows_pb.js';
+import {
+  EventKind,
+  type WorkflowField,
+  type WorkflowStatus,
+} from '../gen/dbosui/v1/workflows_pb.js';
 
 export type ListParams = {
   statuses: WorkflowStatus[];
@@ -79,6 +84,60 @@ export function useSchedules() {
     queryFn: () => workflowClient.listSchedules({}),
     staleTime: 60_000,
   });
+}
+
+/**
+ * Subscribes to the server-streaming SubscribeEvents RPC and invalidates the
+ * relevant React Query caches when hints arrive. Mount once near the root.
+ * Reconnects with exponential backoff if the stream errors.
+ */
+export function useEventStream() {
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    const ac = new AbortController();
+    let cancelled = false;
+    let backoffMs = 1000;
+
+    async function loop() {
+      while (!cancelled) {
+        try {
+          const stream = workflowClient.subscribeEvents(
+            {},
+            { signal: ac.signal },
+          );
+          backoffMs = 1000;
+          for await (const ev of stream) {
+            switch (ev.kind) {
+              case EventKind.WORKFLOWS_CHANGED:
+                qc.invalidateQueries({ queryKey: ['workflows'] });
+                qc.invalidateQueries({ queryKey: ['stats'] });
+                qc.invalidateQueries({ queryKey: ['activity'] });
+                qc.invalidateQueries({ queryKey: ['queue-stats'] });
+                break;
+              case EventKind.NOTIFICATION_ADDED:
+                qc.invalidateQueries({ queryKey: ['notifications'] });
+                break;
+              case EventKind.WORKFLOW_EVENT_SET:
+                qc.invalidateQueries({ queryKey: ['workflow-events'] });
+                break;
+            }
+          }
+        } catch {
+          if (cancelled) return;
+        }
+        // Stream ended or errored — wait then reconnect.
+        await new Promise((r) => setTimeout(r, backoffMs));
+        backoffMs = Math.min(backoffMs * 2, 30_000);
+      }
+    }
+
+    loop();
+    return () => {
+      cancelled = true;
+      ac.abort();
+    };
+  }, [qc]);
 }
 
 export type NotificationParams = {

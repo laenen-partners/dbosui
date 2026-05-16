@@ -1,5 +1,8 @@
 import { CodeHighlight } from '@mantine/code-highlight';
 
+import '@mantine/code-highlight/styles.css';
+import 'highlight.js/styles/atom-one-dark.css';
+
 import { tryPrettyJSON } from '../lib/format';
 
 type Props = {
