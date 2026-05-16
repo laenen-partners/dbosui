@@ -63,6 +63,12 @@ export function formatDuration(from?: Timestamp, to?: Timestamp): string {
   return `${h.toFixed(1)}h`;
 }
 
+/** Number of milliseconds since the epoch represented by a Timestamp, or 0. */
+export function timestampToMs(ts?: Timestamp): number {
+  if (!ts) return 0;
+  return Number(ts.seconds) * 1000 + Math.floor(ts.nanos / 1_000_000);
+}
+
 /** ISO date helper for URL query params (YYYY-MM-DD), or empty for null. */
 export function dateToIso(d: Date | null): string {
   if (!d) return '';

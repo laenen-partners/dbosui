@@ -7,11 +7,18 @@ import {
   Text,
   Title,
 } from '@mantine/core';
-import { IconActivity, IconBell, IconListDetails, IconStack3 } from '@tabler/icons-react';
+import {
+  IconActivity,
+  IconBell,
+  IconCalendarTime,
+  IconListDetails,
+  IconStack3,
+} from '@tabler/icons-react';
 import { Link, Route, Routes, useLocation } from 'react-router-dom';
 
 import { NotificationsPage } from './pages/NotificationsPage';
 import { QueuesPage } from './pages/QueuesPage';
+import { SchedulesPage } from './pages/SchedulesPage';
 import { WorkflowsPage } from './pages/WorkflowsPage';
 import { ThemeToggle } from './components/ThemeToggle';
 
@@ -66,6 +73,13 @@ export function App() {
                   Queues
                 </Tabs.Tab>
                 <Tabs.Tab
+                  value="/schedules"
+                  renderRoot={(props) => <Link to="/schedules" {...props} />}
+                  leftSection={<IconCalendarTime size={16} />}
+                >
+                  Schedules
+                </Tabs.Tab>
+                <Tabs.Tab
                   value="/notifications"
                   renderRoot={(props) => <Link to="/notifications" {...props} />}
                   leftSection={<IconBell size={16} />}
@@ -86,6 +100,7 @@ export function App() {
           <Routes>
             <Route path="/" element={<WorkflowsPage />} />
             <Route path="/queues" element={<QueuesPage />} />
+            <Route path="/schedules" element={<SchedulesPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
           </Routes>
         </Container>

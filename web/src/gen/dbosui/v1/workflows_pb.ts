@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dbosui/v1/workflows.proto.
  */
 export const file_dbosui_v1_workflows: GenFile = /*@__PURE__*/
-  fileDesc("ChlkYm9zdWkvdjEvd29ya2Zsb3dzLnByb3RvEglkYm9zdWkudjEi8wIKCFdvcmtmbG93EgoKAmlkGAEgASgJEikKBnN0YXR1cxgCIAEoDjIZLmRib3N1aS52MS5Xb3JrZmxvd1N0YXR1cxIMCgRuYW1lGAMgASgJEhoKEmF1dGhlbnRpY2F0ZWRfdXNlchgEIAEoCRISCgppbnB1dF9qc29uGAUgASgJEhMKC291dHB1dF9qc29uGAYgASgJEg0KBWVycm9yGAcgASgJEi4KCmNyZWF0ZWRfYXQYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi4KCnVwZGF0ZWRfYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhsKE2FwcGxpY2F0aW9uX3ZlcnNpb24YCiABKAkSFgoOYXBwbGljYXRpb25faWQYCyABKAkSEgoKcXVldWVfbmFtZRgMIAEoCRIQCghhdHRlbXB0cxgNIAEoBRITCgtleGVjdXRvcl9pZBgOIAEoCSJJCgRTdGVwEg8KB3N0ZXBfaWQYASABKAUSDAoEbmFtZRgCIAEoCRITCgtvdXRwdXRfanNvbhgDIAEoCRINCgVlcnJvchgEIAEoCSIjCgVFdmVudBILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAkiWwoFU3RhdHMSDQoFdG90YWwYASABKAUSDwoHcGVuZGluZxgCIAEoBRIPCgdzdWNjZXNzGAMgASgFEg4KBmZhaWxlZBgEIAEoBRIRCgljYW5jZWxsZWQYBSABKAUi0QIKFExpc3RXb3JrZmxvd3NSZXF1ZXN0EisKCHN0YXR1c2VzGAEgAygOMhkuZGJvc3VpLnYxLldvcmtmbG93U3RhdHVzEgwKBG5hbWUYAiABKAkSDQoFbGltaXQYAyABKAUSDgoGb2Zmc2V0GAQgASgFEhEKCXNvcnRfZGVzYxgFIAEoCBIMCgR1c2VyGAYgASgJEhEKCWlkX3ByZWZpeBgHIAEoCRISCgpxdWV1ZV9uYW1lGAggASgJEhMKC2V4ZWN1dG9yX2lkGAkgASgJEhsKE2FwcGxpY2F0aW9uX3ZlcnNpb24YCiABKAkSMQoNY3JlYXRlZF9hZnRlchgLIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASMgoOY3JlYXRlZF9iZWZvcmUYDCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIk4KFUxpc3RXb3JrZmxvd3NSZXNwb25zZRImCgl3b3JrZmxvd3MYASADKAsyEy5kYm9zdWkudjEuV29ya2Zsb3cSDQoFdG90YWwYAiABKAUiIAoSR2V0V29ya2Zsb3dSZXF1ZXN0EgoKAmlkGAEgASgJIjwKE0dldFdvcmtmbG93UmVzcG9uc2USJQoId29ya2Zsb3cYASABKAsyEy5kYm9zdWkudjEuV29ya2Zsb3ciJQoXR2V0V29ya2Zsb3dTdGVwc1JlcXVlc3QSCgoCaWQYASABKAkiOgoYR2V0V29ya2Zsb3dTdGVwc1Jlc3BvbnNlEh4KBXN0ZXBzGAEgAygLMg8uZGJvc3VpLnYxLlN0ZXAiJgoYR2V0V29ya2Zsb3dFdmVudHNSZXF1ZXN0EgoKAmlkGAEgASgJIj0KGUdldFdvcmtmbG93RXZlbnRzUmVzcG9uc2USIAoGZXZlbnRzGAEgAygLMhAuZGJvc3VpLnYxLkV2ZW50IhEKD0dldFN0YXRzUmVxdWVzdCIzChBHZXRTdGF0c1Jlc3BvbnNlEh8KBXN0YXRzGAEgASgLMhAuZGJvc3VpLnYxLlN0YXRzIoYBCgpRdWV1ZVN0YXRzEhIKCnF1ZXVlX25hbWUYASABKAkSDQoFdG90YWwYAiABKAUSDwoHcGVuZGluZxgDIAEoBRIQCghlbnF1ZXVlZBgEIAEoBRIPCgdzdWNjZXNzGAUgASgFEg4KBmZhaWxlZBgGIAEoBRIRCgljYW5jZWxsZWQYByABKAUiFwoVTGlzdFF1ZXVlU3RhdHNSZXF1ZXN0Ij8KFkxpc3RRdWV1ZVN0YXRzUmVzcG9uc2USJQoGcXVldWVzGAEgAygLMhUuZGJvc3VpLnYxLlF1ZXVlU3RhdHMifwoMTm90aWZpY2F0aW9uEh8KF2Rlc3RpbmF0aW9uX3dvcmtmbG93X2lkGAEgASgJEg0KBXRvcGljGAIgASgJEg8KB21lc3NhZ2UYAyABKAkSLgoKY3JlYXRlZF9hdBgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiaQoYTGlzdE5vdGlmaWNhdGlvbnNSZXF1ZXN0Eh8KF2Rlc3RpbmF0aW9uX3dvcmtmbG93X2lkGAEgASgJEg0KBXRvcGljGAIgASgJEg0KBWxpbWl0GAMgASgFEg4KBm9mZnNldBgEIAEoBSJaChlMaXN0Tm90aWZpY2F0aW9uc1Jlc3BvbnNlEi4KDW5vdGlmaWNhdGlvbnMYASADKAsyFy5kYm9zdWkudjEuTm90aWZpY2F0aW9uEg0KBXRvdGFsGAIgASgFIiMKFUNhbmNlbFdvcmtmbG93UmVxdWVzdBIKCgJpZBgBIAEoCSIYChZDYW5jZWxXb3JrZmxvd1Jlc3BvbnNlIiMKFVJlc3VtZVdvcmtmbG93UmVxdWVzdBIKCgJpZBgBIAEoCSIYChZSZXN1bWVXb3JrZmxvd1Jlc3BvbnNlIiMKFURlbGV0ZVdvcmtmbG93UmVxdWVzdBIKCgJpZBgBIAEoCSIYChZEZWxldGVXb3JrZmxvd1Jlc3BvbnNlIkQKGUxpc3REaXN0aW5jdFZhbHVlc1JlcXVlc3QSJwoFZmllbGQYASABKA4yGC5kYm9zdWkudjEuV29ya2Zsb3dGaWVsZCIsChpMaXN0RGlzdGluY3RWYWx1ZXNSZXNwb25zZRIOCgZ2YWx1ZXMYASADKAkq7QEKDldvcmtmbG93U3RhdHVzEh8KG1dPUktGTE9XX1NUQVRVU19VTlNQRUNJRklFRBAAEhsKF1dPUktGTE9XX1NUQVRVU19QRU5ESU5HEAESHAoYV09SS0ZMT1dfU1RBVFVTX0VOUVVFVUVEEAISGwoXV09SS0ZMT1dfU1RBVFVTX1NVQ0NFU1MQAxIZChVXT1JLRkxPV19TVEFUVVNfRVJST1IQBBIdChlXT1JLRkxPV19TVEFUVVNfQ0FOQ0VMTEVEEAUSKAokV09SS0ZMT1dfU1RBVFVTX01BWF9SRVRSSUVTX0VYQ0VFREVEEAYq1gEKDVdvcmtmbG93RmllbGQSHgoaV09SS0ZMT1dfRklFTERfVU5TUEVDSUZJRUQQABIXChNXT1JLRkxPV19GSUVMRF9OQU1FEAESHQoZV09SS0ZMT1dfRklFTERfUVVFVUVfTkFNRRACEh4KGldPUktGTE9XX0ZJRUxEX0VYRUNVVE9SX0lEEAMSJgoiV09SS0ZMT1dfRklFTERfQVBQTElDQVRJT05fVkVSU0lPThAEEiUKIVdPUktGTE9XX0ZJRUxEX0FVVEhFTlRJQ0FURURfVVNFUhAFMtQHCg9Xb3JrZmxvd1NlcnZpY2USUgoNTGlzdFdvcmtmbG93cxIfLmRib3N1aS52MS5MaXN0V29ya2Zsb3dzUmVxdWVzdBogLmRib3N1aS52MS5MaXN0V29ya2Zsb3dzUmVzcG9uc2USTAoLR2V0V29ya2Zsb3cSHS5kYm9zdWkudjEuR2V0V29ya2Zsb3dSZXF1ZXN0Gh4uZGJvc3VpLnYxLkdldFdvcmtmbG93UmVzcG9uc2USWwoQR2V0V29ya2Zsb3dTdGVwcxIiLmRib3N1aS52MS5HZXRXb3JrZmxvd1N0ZXBzUmVxdWVzdBojLmRib3N1aS52MS5HZXRXb3JrZmxvd1N0ZXBzUmVzcG9uc2USXgoRR2V0V29ya2Zsb3dFdmVudHMSIy5kYm9zdWkudjEuR2V0V29ya2Zsb3dFdmVudHNSZXF1ZXN0GiQuZGJvc3VpLnYxLkdldFdvcmtmbG93RXZlbnRzUmVzcG9uc2USQwoIR2V0U3RhdHMSGi5kYm9zdWkudjEuR2V0U3RhdHNSZXF1ZXN0GhsuZGJvc3VpLnYxLkdldFN0YXRzUmVzcG9uc2USVQoOTGlzdFF1ZXVlU3RhdHMSIC5kYm9zdWkudjEuTGlzdFF1ZXVlU3RhdHNSZXF1ZXN0GiEuZGJvc3VpLnYxLkxpc3RRdWV1ZVN0YXRzUmVzcG9uc2USXgoRTGlzdE5vdGlmaWNhdGlvbnMSIy5kYm9zdWkudjEuTGlzdE5vdGlmaWNhdGlvbnNSZXF1ZXN0GiQuZGJvc3VpLnYxLkxpc3ROb3RpZmljYXRpb25zUmVzcG9uc2USYQoSTGlzdERpc3RpbmN0VmFsdWVzEiQuZGJvc3VpLnYxLkxpc3REaXN0aW5jdFZhbHVlc1JlcXVlc3QaJS5kYm9zdWkudjEuTGlzdERpc3RpbmN0VmFsdWVzUmVzcG9uc2USVQoOQ2FuY2VsV29ya2Zsb3cSIC5kYm9zdWkudjEuQ2FuY2VsV29ya2Zsb3dSZXF1ZXN0GiEuZGJvc3VpLnYxLkNhbmNlbFdvcmtmbG93UmVzcG9uc2USVQoOUmVzdW1lV29ya2Zsb3cSIC5kYm9zdWkudjEuUmVzdW1lV29ya2Zsb3dSZXF1ZXN0GiEuZGJvc3VpLnYxLlJlc3VtZVdvcmtmbG93UmVzcG9uc2USVQoORGVsZXRlV29ya2Zsb3cSIC5kYm9zdWkudjEuRGVsZXRlV29ya2Zsb3dSZXF1ZXN0GiEuZGJvc3VpLnYxLkRlbGV0ZVdvcmtmbG93UmVzcG9uc2VCPVo7Z2l0aHViLmNvbS9sYWVuZW4tcGFydG5lcnMvZGJvc3VpL2dlbi9nby9kYm9zdWkvdjE7ZGJvc3VpdjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
+  fileDesc("ChlkYm9zdWkvdjEvd29ya2Zsb3dzLnByb3RvEglkYm9zdWkudjEi8wIKCFdvcmtmbG93EgoKAmlkGAEgASgJEikKBnN0YXR1cxgCIAEoDjIZLmRib3N1aS52MS5Xb3JrZmxvd1N0YXR1cxIMCgRuYW1lGAMgASgJEhoKEmF1dGhlbnRpY2F0ZWRfdXNlchgEIAEoCRISCgppbnB1dF9qc29uGAUgASgJEhMKC291dHB1dF9qc29uGAYgASgJEg0KBWVycm9yGAcgASgJEi4KCmNyZWF0ZWRfYXQYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi4KCnVwZGF0ZWRfYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhsKE2FwcGxpY2F0aW9uX3ZlcnNpb24YCiABKAkSFgoOYXBwbGljYXRpb25faWQYCyABKAkSEgoKcXVldWVfbmFtZRgMIAEoCRIQCghhdHRlbXB0cxgNIAEoBRITCgtleGVjdXRvcl9pZBgOIAEoCSLGAQoEU3RlcBIPCgdzdGVwX2lkGAEgASgFEgwKBG5hbWUYAiABKAkSEwoLb3V0cHV0X2pzb24YAyABKAkSDQoFZXJyb3IYBCABKAkSLgoKc3RhcnRlZF9hdBgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASMAoMY29tcGxldGVkX2F0GAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIZChFjaGlsZF93b3JrZmxvd19pZBgHIAEoCSIjCgVFdmVudBILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAkiWwoFU3RhdHMSDQoFdG90YWwYASABKAUSDwoHcGVuZGluZxgCIAEoBRIPCgdzdWNjZXNzGAMgASgFEg4KBmZhaWxlZBgEIAEoBRIRCgljYW5jZWxsZWQYBSABKAUi0QIKFExpc3RXb3JrZmxvd3NSZXF1ZXN0EisKCHN0YXR1c2VzGAEgAygOMhkuZGJvc3VpLnYxLldvcmtmbG93U3RhdHVzEgwKBG5hbWUYAiABKAkSDQoFbGltaXQYAyABKAUSDgoGb2Zmc2V0GAQgASgFEhEKCXNvcnRfZGVzYxgFIAEoCBIMCgR1c2VyGAYgASgJEhEKCWlkX3ByZWZpeBgHIAEoCRISCgpxdWV1ZV9uYW1lGAggASgJEhMKC2V4ZWN1dG9yX2lkGAkgASgJEhsKE2FwcGxpY2F0aW9uX3ZlcnNpb24YCiABKAkSMQoNY3JlYXRlZF9hZnRlchgLIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASMgoOY3JlYXRlZF9iZWZvcmUYDCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIk4KFUxpc3RXb3JrZmxvd3NSZXNwb25zZRImCgl3b3JrZmxvd3MYASADKAsyEy5kYm9zdWkudjEuV29ya2Zsb3cSDQoFdG90YWwYAiABKAUiIAoSR2V0V29ya2Zsb3dSZXF1ZXN0EgoKAmlkGAEgASgJIjwKE0dldFdvcmtmbG93UmVzcG9uc2USJQoId29ya2Zsb3cYASABKAsyEy5kYm9zdWkudjEuV29ya2Zsb3ciJQoXR2V0V29ya2Zsb3dTdGVwc1JlcXVlc3QSCgoCaWQYASABKAkiOgoYR2V0V29ya2Zsb3dTdGVwc1Jlc3BvbnNlEh4KBXN0ZXBzGAEgAygLMg8uZGJvc3VpLnYxLlN0ZXAiJgoYR2V0V29ya2Zsb3dFdmVudHNSZXF1ZXN0EgoKAmlkGAEgASgJIj0KGUdldFdvcmtmbG93RXZlbnRzUmVzcG9uc2USIAoGZXZlbnRzGAEgAygLMhAuZGJvc3VpLnYxLkV2ZW50IhEKD0dldFN0YXRzUmVxdWVzdCIzChBHZXRTdGF0c1Jlc3BvbnNlEh8KBXN0YXRzGAEgASgLMhAuZGJvc3VpLnYxLlN0YXRzIpIBCg5BY3Rpdml0eUJ1Y2tldBIsCghlbmRfdGltZRgBIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDQoFdG90YWwYAiABKAUSDwoHc3VjY2VzcxgDIAEoBRIOCgZmYWlsZWQYBCABKAUSDwoHcGVuZGluZxgFIAEoBRIRCgljYW5jZWxsZWQYBiABKAUiIwoSR2V0QWN0aXZpdHlSZXF1ZXN0Eg0KBWhvdXJzGAEgASgFIkEKE0dldEFjdGl2aXR5UmVzcG9uc2USKgoHYnVja2V0cxgBIAMoCzIZLmRib3N1aS52MS5BY3Rpdml0eUJ1Y2tldCKGAQoKUXVldWVTdGF0cxISCgpxdWV1ZV9uYW1lGAEgASgJEg0KBXRvdGFsGAIgASgFEg8KB3BlbmRpbmcYAyABKAUSEAoIZW5xdWV1ZWQYBCABKAUSDwoHc3VjY2VzcxgFIAEoBRIOCgZmYWlsZWQYBiABKAUSEQoJY2FuY2VsbGVkGAcgASgFIhcKFUxpc3RRdWV1ZVN0YXRzUmVxdWVzdCI/ChZMaXN0UXVldWVTdGF0c1Jlc3BvbnNlEiUKBnF1ZXVlcxgBIAMoCzIVLmRib3N1aS52MS5RdWV1ZVN0YXRzIn8KDE5vdGlmaWNhdGlvbhIfChdkZXN0aW5hdGlvbl93b3JrZmxvd19pZBgBIAEoCRINCgV0b3BpYxgCIAEoCRIPCgdtZXNzYWdlGAMgASgJEi4KCmNyZWF0ZWRfYXQYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wImkKGExpc3ROb3RpZmljYXRpb25zUmVxdWVzdBIfChdkZXN0aW5hdGlvbl93b3JrZmxvd19pZBgBIAEoCRINCgV0b3BpYxgCIAEoCRINCgVsaW1pdBgDIAEoBRIOCgZvZmZzZXQYBCABKAUiWgoZTGlzdE5vdGlmaWNhdGlvbnNSZXNwb25zZRIuCg1ub3RpZmljYXRpb25zGAEgAygLMhcuZGJvc3VpLnYxLk5vdGlmaWNhdGlvbhINCgV0b3RhbBgCIAEoBSKGAgoIU2NoZWR1bGUSEwoLc2NoZWR1bGVfaWQYASABKAkSFQoNc2NoZWR1bGVfbmFtZRgCIAEoCRIVCg13b3JrZmxvd19uYW1lGAMgASgJEhsKE3dvcmtmbG93X2NsYXNzX25hbWUYBCABKAkSEAoIc2NoZWR1bGUYBSABKAkSDgoGc3RhdHVzGAYgASgJEjEKDWxhc3RfZmlyZWRfYXQYByABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhUKDWNyb25fdGltZXpvbmUYCCABKAkSEgoKcXVldWVfbmFtZRgJIAEoCRIaChJhdXRvbWF0aWNfYmFja2ZpbGwYCiABKAgiFgoUTGlzdFNjaGVkdWxlc1JlcXVlc3QiPwoVTGlzdFNjaGVkdWxlc1Jlc3BvbnNlEiYKCXNjaGVkdWxlcxgBIAMoCzITLmRib3N1aS52MS5TY2hlZHVsZSIjChVDYW5jZWxXb3JrZmxvd1JlcXVlc3QSCgoCaWQYASABKAkiGAoWQ2FuY2VsV29ya2Zsb3dSZXNwb25zZSIjChVSZXN1bWVXb3JrZmxvd1JlcXVlc3QSCgoCaWQYASABKAkiGAoWUmVzdW1lV29ya2Zsb3dSZXNwb25zZSIjChVEZWxldGVXb3JrZmxvd1JlcXVlc3QSCgoCaWQYASABKAkiGAoWRGVsZXRlV29ya2Zsb3dSZXNwb25zZSJEChlMaXN0RGlzdGluY3RWYWx1ZXNSZXF1ZXN0EicKBWZpZWxkGAEgASgOMhguZGJvc3VpLnYxLldvcmtmbG93RmllbGQiLAoaTGlzdERpc3RpbmN0VmFsdWVzUmVzcG9uc2USDgoGdmFsdWVzGAEgAygJKu0BCg5Xb3JrZmxvd1N0YXR1cxIfChtXT1JLRkxPV19TVEFUVVNfVU5TUEVDSUZJRUQQABIbChdXT1JLRkxPV19TVEFUVVNfUEVORElORxABEhwKGFdPUktGTE9XX1NUQVRVU19FTlFVRVVFRBACEhsKF1dPUktGTE9XX1NUQVRVU19TVUNDRVNTEAMSGQoVV09SS0ZMT1dfU1RBVFVTX0VSUk9SEAQSHQoZV09SS0ZMT1dfU1RBVFVTX0NBTkNFTExFRBAFEigKJFdPUktGTE9XX1NUQVRVU19NQVhfUkVUUklFU19FWENFRURFRBAGKtYBCg1Xb3JrZmxvd0ZpZWxkEh4KGldPUktGTE9XX0ZJRUxEX1VOU1BFQ0lGSUVEEAASFwoTV09SS0ZMT1dfRklFTERfTkFNRRABEh0KGVdPUktGTE9XX0ZJRUxEX1FVRVVFX05BTUUQAhIeChpXT1JLRkxPV19GSUVMRF9FWEVDVVRPUl9JRBADEiYKIldPUktGTE9XX0ZJRUxEX0FQUExJQ0FUSU9OX1ZFUlNJT04QBBIlCiFXT1JLRkxPV19GSUVMRF9BVVRIRU5USUNBVEVEX1VTRVIQBTL2CAoPV29ya2Zsb3dTZXJ2aWNlElIKDUxpc3RXb3JrZmxvd3MSHy5kYm9zdWkudjEuTGlzdFdvcmtmbG93c1JlcXVlc3QaIC5kYm9zdWkudjEuTGlzdFdvcmtmbG93c1Jlc3BvbnNlEkwKC0dldFdvcmtmbG93Eh0uZGJvc3VpLnYxLkdldFdvcmtmbG93UmVxdWVzdBoeLmRib3N1aS52MS5HZXRXb3JrZmxvd1Jlc3BvbnNlElsKEEdldFdvcmtmbG93U3RlcHMSIi5kYm9zdWkudjEuR2V0V29ya2Zsb3dTdGVwc1JlcXVlc3QaIy5kYm9zdWkudjEuR2V0V29ya2Zsb3dTdGVwc1Jlc3BvbnNlEl4KEUdldFdvcmtmbG93RXZlbnRzEiMuZGJvc3VpLnYxLkdldFdvcmtmbG93RXZlbnRzUmVxdWVzdBokLmRib3N1aS52MS5HZXRXb3JrZmxvd0V2ZW50c1Jlc3BvbnNlEkMKCEdldFN0YXRzEhouZGJvc3VpLnYxLkdldFN0YXRzUmVxdWVzdBobLmRib3N1aS52MS5HZXRTdGF0c1Jlc3BvbnNlEkwKC0dldEFjdGl2aXR5Eh0uZGJvc3VpLnYxLkdldEFjdGl2aXR5UmVxdWVzdBoeLmRib3N1aS52MS5HZXRBY3Rpdml0eVJlc3BvbnNlElUKDkxpc3RRdWV1ZVN0YXRzEiAuZGJvc3VpLnYxLkxpc3RRdWV1ZVN0YXRzUmVxdWVzdBohLmRib3N1aS52MS5MaXN0UXVldWVTdGF0c1Jlc3BvbnNlEl4KEUxpc3ROb3RpZmljYXRpb25zEiMuZGJvc3VpLnYxLkxpc3ROb3RpZmljYXRpb25zUmVxdWVzdBokLmRib3N1aS52MS5MaXN0Tm90aWZpY2F0aW9uc1Jlc3BvbnNlElIKDUxpc3RTY2hlZHVsZXMSHy5kYm9zdWkudjEuTGlzdFNjaGVkdWxlc1JlcXVlc3QaIC5kYm9zdWkudjEuTGlzdFNjaGVkdWxlc1Jlc3BvbnNlEmEKEkxpc3REaXN0aW5jdFZhbHVlcxIkLmRib3N1aS52MS5MaXN0RGlzdGluY3RWYWx1ZXNSZXF1ZXN0GiUuZGJvc3VpLnYxLkxpc3REaXN0aW5jdFZhbHVlc1Jlc3BvbnNlElUKDkNhbmNlbFdvcmtmbG93EiAuZGJvc3VpLnYxLkNhbmNlbFdvcmtmbG93UmVxdWVzdBohLmRib3N1aS52MS5DYW5jZWxXb3JrZmxvd1Jlc3BvbnNlElUKDlJlc3VtZVdvcmtmbG93EiAuZGJvc3VpLnYxLlJlc3VtZVdvcmtmbG93UmVxdWVzdBohLmRib3N1aS52MS5SZXN1bWVXb3JrZmxvd1Jlc3BvbnNlElUKDkRlbGV0ZVdvcmtmbG93EiAuZGJvc3VpLnYxLkRlbGV0ZVdvcmtmbG93UmVxdWVzdBohLmRib3N1aS52MS5EZWxldGVXb3JrZmxvd1Jlc3BvbnNlQj1aO2dpdGh1Yi5jb20vbGFlbmVuLXBhcnRuZXJzL2Rib3N1aS9nZW4vZ28vZGJvc3VpL3YxO2Rib3N1aXYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
 
 /**
  * @generated from message dbosui.v1.Workflow
@@ -123,6 +123,23 @@ export type Step = Message<"dbosui.v1.Step"> & {
    * @generated from field: string error = 4;
    */
   error: string;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp started_at = 5;
+   */
+  startedAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp completed_at = 6;
+   */
+  completedAt?: Timestamp | undefined;
+
+  /**
+   * ID of a workflow this step launched as a child, if any.
+   *
+   * @generated from field: string child_workflow_id = 7;
+   */
+  childWorkflowId: string;
 };
 
 /**
@@ -422,6 +439,87 @@ export const GetStatsResponseSchema: GenMessage<GetStatsResponse> = /*@__PURE__*
   messageDesc(file_dbosui_v1_workflows, 13);
 
 /**
+ * Per-hour rollup over a recent window (default 24h). Buckets are returned
+ * in chronological order; each Bucket spans one hour ending at end_time.
+ *
+ * @generated from message dbosui.v1.ActivityBucket
+ */
+export type ActivityBucket = Message<"dbosui.v1.ActivityBucket"> & {
+  /**
+   * @generated from field: google.protobuf.Timestamp end_time = 1;
+   */
+  endTime?: Timestamp | undefined;
+
+  /**
+   * @generated from field: int32 total = 2;
+   */
+  total: number;
+
+  /**
+   * @generated from field: int32 success = 3;
+   */
+  success: number;
+
+  /**
+   * @generated from field: int32 failed = 4;
+   */
+  failed: number;
+
+  /**
+   * @generated from field: int32 pending = 5;
+   */
+  pending: number;
+
+  /**
+   * @generated from field: int32 cancelled = 6;
+   */
+  cancelled: number;
+};
+
+/**
+ * Describes the message dbosui.v1.ActivityBucket.
+ * Use `create(ActivityBucketSchema)` to create a new message.
+ */
+export const ActivityBucketSchema: GenMessage<ActivityBucket> = /*@__PURE__*/
+  messageDesc(file_dbosui_v1_workflows, 14);
+
+/**
+ * @generated from message dbosui.v1.GetActivityRequest
+ */
+export type GetActivityRequest = Message<"dbosui.v1.GetActivityRequest"> & {
+  /**
+   * Defaults to 24 hours of hourly buckets if zero.
+   *
+   * @generated from field: int32 hours = 1;
+   */
+  hours: number;
+};
+
+/**
+ * Describes the message dbosui.v1.GetActivityRequest.
+ * Use `create(GetActivityRequestSchema)` to create a new message.
+ */
+export const GetActivityRequestSchema: GenMessage<GetActivityRequest> = /*@__PURE__*/
+  messageDesc(file_dbosui_v1_workflows, 15);
+
+/**
+ * @generated from message dbosui.v1.GetActivityResponse
+ */
+export type GetActivityResponse = Message<"dbosui.v1.GetActivityResponse"> & {
+  /**
+   * @generated from field: repeated dbosui.v1.ActivityBucket buckets = 1;
+   */
+  buckets: ActivityBucket[];
+};
+
+/**
+ * Describes the message dbosui.v1.GetActivityResponse.
+ * Use `create(GetActivityResponseSchema)` to create a new message.
+ */
+export const GetActivityResponseSchema: GenMessage<GetActivityResponse> = /*@__PURE__*/
+  messageDesc(file_dbosui_v1_workflows, 16);
+
+/**
  * @generated from message dbosui.v1.QueueStats
  */
 export type QueueStats = Message<"dbosui.v1.QueueStats"> & {
@@ -466,7 +564,7 @@ export type QueueStats = Message<"dbosui.v1.QueueStats"> & {
  * Use `create(QueueStatsSchema)` to create a new message.
  */
 export const QueueStatsSchema: GenMessage<QueueStats> = /*@__PURE__*/
-  messageDesc(file_dbosui_v1_workflows, 14);
+  messageDesc(file_dbosui_v1_workflows, 17);
 
 /**
  * @generated from message dbosui.v1.ListQueueStatsRequest
@@ -479,7 +577,7 @@ export type ListQueueStatsRequest = Message<"dbosui.v1.ListQueueStatsRequest"> &
  * Use `create(ListQueueStatsRequestSchema)` to create a new message.
  */
 export const ListQueueStatsRequestSchema: GenMessage<ListQueueStatsRequest> = /*@__PURE__*/
-  messageDesc(file_dbosui_v1_workflows, 15);
+  messageDesc(file_dbosui_v1_workflows, 18);
 
 /**
  * @generated from message dbosui.v1.ListQueueStatsResponse
@@ -496,7 +594,7 @@ export type ListQueueStatsResponse = Message<"dbosui.v1.ListQueueStatsResponse">
  * Use `create(ListQueueStatsResponseSchema)` to create a new message.
  */
 export const ListQueueStatsResponseSchema: GenMessage<ListQueueStatsResponse> = /*@__PURE__*/
-  messageDesc(file_dbosui_v1_workflows, 16);
+  messageDesc(file_dbosui_v1_workflows, 19);
 
 /**
  * @generated from message dbosui.v1.Notification
@@ -528,7 +626,7 @@ export type Notification = Message<"dbosui.v1.Notification"> & {
  * Use `create(NotificationSchema)` to create a new message.
  */
 export const NotificationSchema: GenMessage<Notification> = /*@__PURE__*/
-  messageDesc(file_dbosui_v1_workflows, 17);
+  messageDesc(file_dbosui_v1_workflows, 20);
 
 /**
  * @generated from message dbosui.v1.ListNotificationsRequest
@@ -560,7 +658,7 @@ export type ListNotificationsRequest = Message<"dbosui.v1.ListNotificationsReque
  * Use `create(ListNotificationsRequestSchema)` to create a new message.
  */
 export const ListNotificationsRequestSchema: GenMessage<ListNotificationsRequest> = /*@__PURE__*/
-  messageDesc(file_dbosui_v1_workflows, 18);
+  messageDesc(file_dbosui_v1_workflows, 21);
 
 /**
  * @generated from message dbosui.v1.ListNotificationsResponse
@@ -582,7 +680,105 @@ export type ListNotificationsResponse = Message<"dbosui.v1.ListNotificationsResp
  * Use `create(ListNotificationsResponseSchema)` to create a new message.
  */
 export const ListNotificationsResponseSchema: GenMessage<ListNotificationsResponse> = /*@__PURE__*/
-  messageDesc(file_dbosui_v1_workflows, 19);
+  messageDesc(file_dbosui_v1_workflows, 22);
+
+/**
+ * @generated from message dbosui.v1.Schedule
+ */
+export type Schedule = Message<"dbosui.v1.Schedule"> & {
+  /**
+   * @generated from field: string schedule_id = 1;
+   */
+  scheduleId: string;
+
+  /**
+   * @generated from field: string schedule_name = 2;
+   */
+  scheduleName: string;
+
+  /**
+   * @generated from field: string workflow_name = 3;
+   */
+  workflowName: string;
+
+  /**
+   * @generated from field: string workflow_class_name = 4;
+   */
+  workflowClassName: string;
+
+  /**
+   * Cron expression (or interval syntax) as registered with the SDK.
+   *
+   * @generated from field: string schedule = 5;
+   */
+  schedule: string;
+
+  /**
+   * Active / Paused (mirrors dbos.ScheduleStatus).
+   *
+   * @generated from field: string status = 6;
+   */
+  status: string;
+
+  /**
+   * Optional: when the schedule last fired.
+   *
+   * @generated from field: google.protobuf.Timestamp last_fired_at = 7;
+   */
+  lastFiredAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: string cron_timezone = 8;
+   */
+  cronTimezone: string;
+
+  /**
+   * @generated from field: string queue_name = 9;
+   */
+  queueName: string;
+
+  /**
+   * @generated from field: bool automatic_backfill = 10;
+   */
+  automaticBackfill: boolean;
+};
+
+/**
+ * Describes the message dbosui.v1.Schedule.
+ * Use `create(ScheduleSchema)` to create a new message.
+ */
+export const ScheduleSchema: GenMessage<Schedule> = /*@__PURE__*/
+  messageDesc(file_dbosui_v1_workflows, 23);
+
+/**
+ * @generated from message dbosui.v1.ListSchedulesRequest
+ */
+export type ListSchedulesRequest = Message<"dbosui.v1.ListSchedulesRequest"> & {
+};
+
+/**
+ * Describes the message dbosui.v1.ListSchedulesRequest.
+ * Use `create(ListSchedulesRequestSchema)` to create a new message.
+ */
+export const ListSchedulesRequestSchema: GenMessage<ListSchedulesRequest> = /*@__PURE__*/
+  messageDesc(file_dbosui_v1_workflows, 24);
+
+/**
+ * @generated from message dbosui.v1.ListSchedulesResponse
+ */
+export type ListSchedulesResponse = Message<"dbosui.v1.ListSchedulesResponse"> & {
+  /**
+   * @generated from field: repeated dbosui.v1.Schedule schedules = 1;
+   */
+  schedules: Schedule[];
+};
+
+/**
+ * Describes the message dbosui.v1.ListSchedulesResponse.
+ * Use `create(ListSchedulesResponseSchema)` to create a new message.
+ */
+export const ListSchedulesResponseSchema: GenMessage<ListSchedulesResponse> = /*@__PURE__*/
+  messageDesc(file_dbosui_v1_workflows, 25);
 
 /**
  * @generated from message dbosui.v1.CancelWorkflowRequest
@@ -599,7 +795,7 @@ export type CancelWorkflowRequest = Message<"dbosui.v1.CancelWorkflowRequest"> &
  * Use `create(CancelWorkflowRequestSchema)` to create a new message.
  */
 export const CancelWorkflowRequestSchema: GenMessage<CancelWorkflowRequest> = /*@__PURE__*/
-  messageDesc(file_dbosui_v1_workflows, 20);
+  messageDesc(file_dbosui_v1_workflows, 26);
 
 /**
  * @generated from message dbosui.v1.CancelWorkflowResponse
@@ -612,7 +808,7 @@ export type CancelWorkflowResponse = Message<"dbosui.v1.CancelWorkflowResponse">
  * Use `create(CancelWorkflowResponseSchema)` to create a new message.
  */
 export const CancelWorkflowResponseSchema: GenMessage<CancelWorkflowResponse> = /*@__PURE__*/
-  messageDesc(file_dbosui_v1_workflows, 21);
+  messageDesc(file_dbosui_v1_workflows, 27);
 
 /**
  * @generated from message dbosui.v1.ResumeWorkflowRequest
@@ -629,7 +825,7 @@ export type ResumeWorkflowRequest = Message<"dbosui.v1.ResumeWorkflowRequest"> &
  * Use `create(ResumeWorkflowRequestSchema)` to create a new message.
  */
 export const ResumeWorkflowRequestSchema: GenMessage<ResumeWorkflowRequest> = /*@__PURE__*/
-  messageDesc(file_dbosui_v1_workflows, 22);
+  messageDesc(file_dbosui_v1_workflows, 28);
 
 /**
  * @generated from message dbosui.v1.ResumeWorkflowResponse
@@ -642,7 +838,7 @@ export type ResumeWorkflowResponse = Message<"dbosui.v1.ResumeWorkflowResponse">
  * Use `create(ResumeWorkflowResponseSchema)` to create a new message.
  */
 export const ResumeWorkflowResponseSchema: GenMessage<ResumeWorkflowResponse> = /*@__PURE__*/
-  messageDesc(file_dbosui_v1_workflows, 23);
+  messageDesc(file_dbosui_v1_workflows, 29);
 
 /**
  * @generated from message dbosui.v1.DeleteWorkflowRequest
@@ -659,7 +855,7 @@ export type DeleteWorkflowRequest = Message<"dbosui.v1.DeleteWorkflowRequest"> &
  * Use `create(DeleteWorkflowRequestSchema)` to create a new message.
  */
 export const DeleteWorkflowRequestSchema: GenMessage<DeleteWorkflowRequest> = /*@__PURE__*/
-  messageDesc(file_dbosui_v1_workflows, 24);
+  messageDesc(file_dbosui_v1_workflows, 30);
 
 /**
  * @generated from message dbosui.v1.DeleteWorkflowResponse
@@ -672,7 +868,7 @@ export type DeleteWorkflowResponse = Message<"dbosui.v1.DeleteWorkflowResponse">
  * Use `create(DeleteWorkflowResponseSchema)` to create a new message.
  */
 export const DeleteWorkflowResponseSchema: GenMessage<DeleteWorkflowResponse> = /*@__PURE__*/
-  messageDesc(file_dbosui_v1_workflows, 25);
+  messageDesc(file_dbosui_v1_workflows, 31);
 
 /**
  * @generated from message dbosui.v1.ListDistinctValuesRequest
@@ -689,7 +885,7 @@ export type ListDistinctValuesRequest = Message<"dbosui.v1.ListDistinctValuesReq
  * Use `create(ListDistinctValuesRequestSchema)` to create a new message.
  */
 export const ListDistinctValuesRequestSchema: GenMessage<ListDistinctValuesRequest> = /*@__PURE__*/
-  messageDesc(file_dbosui_v1_workflows, 26);
+  messageDesc(file_dbosui_v1_workflows, 32);
 
 /**
  * @generated from message dbosui.v1.ListDistinctValuesResponse
@@ -706,7 +902,7 @@ export type ListDistinctValuesResponse = Message<"dbosui.v1.ListDistinctValuesRe
  * Use `create(ListDistinctValuesResponseSchema)` to create a new message.
  */
 export const ListDistinctValuesResponseSchema: GenMessage<ListDistinctValuesResponse> = /*@__PURE__*/
-  messageDesc(file_dbosui_v1_workflows, 27);
+  messageDesc(file_dbosui_v1_workflows, 33);
 
 /**
  * @generated from enum dbosui.v1.WorkflowStatus
@@ -842,6 +1038,14 @@ export const WorkflowService: GenService<{
     output: typeof GetStatsResponseSchema;
   },
   /**
+   * @generated from rpc dbosui.v1.WorkflowService.GetActivity
+   */
+  getActivity: {
+    methodKind: "unary";
+    input: typeof GetActivityRequestSchema;
+    output: typeof GetActivityResponseSchema;
+  },
+  /**
    * @generated from rpc dbosui.v1.WorkflowService.ListQueueStats
    */
   listQueueStats: {
@@ -856,6 +1060,14 @@ export const WorkflowService: GenService<{
     methodKind: "unary";
     input: typeof ListNotificationsRequestSchema;
     output: typeof ListNotificationsResponseSchema;
+  },
+  /**
+   * @generated from rpc dbosui.v1.WorkflowService.ListSchedules
+   */
+  listSchedules: {
+    methodKind: "unary";
+    input: typeof ListSchedulesRequestSchema;
+    output: typeof ListSchedulesResponseSchema;
   },
   /**
    * @generated from rpc dbosui.v1.WorkflowService.ListDistinctValues

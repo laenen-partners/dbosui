@@ -40,6 +40,10 @@ message Step {
   string name = 2;
   string output_json = 3;
   string error = 4;
+  google.protobuf.Timestamp started_at = 5;
+  google.protobuf.Timestamp completed_at = 6;
+  // ID of a workflow this step launched as a child, if any.
+  string child_workflow_id = 7;
 }
 
 message Event {
@@ -107,6 +111,26 @@ message GetStatsResponse {
   Stats stats = 1;
 }
 
+// Per-hour rollup over a recent window (default 24h). Buckets are returned
+// in chronological order; each Bucket spans one hour ending at end_time.
+message ActivityBucket {
+  google.protobuf.Timestamp end_time = 1;
+  int32 total = 2;
+  int32 success = 3;
+  int32 failed = 4;
+  int32 pending = 5;
+  int32 cancelled = 6;
+}
+
+message GetActivityRequest {
+  // Defaults to 24 hours of hourly buckets if zero.
+  int32 hours = 1;
+}
+
+message GetActivityResponse {
+  repeated ActivityBucket buckets = 1;
+}
+
 message QueueStats {
   string queue_name = 1;
   int32 total = 2;
@@ -140,6 +164,28 @@ message ListNotificationsRequest {
 message ListNotificationsResponse {
   repeated Notification notifications = 1;
   int32 total = 2;
+}
+
+message Schedule {
+  string schedule_id = 1;
+  string schedule_name = 2;
+  string workflow_name = 3;
+  string workflow_class_name = 4;
+  // Cron expression (or interval syntax) as registered with the SDK.
+  string schedule = 5;
+  // Active / Paused (mirrors dbos.ScheduleStatus).
+  string status = 6;
+  // Optional: when the schedule last fired.
+  google.protobuf.Timestamp last_fired_at = 7;
+  string cron_timezone = 8;
+  string queue_name = 9;
+  bool automatic_backfill = 10;
+}
+
+message ListSchedulesRequest {}
+
+message ListSchedulesResponse {
+  repeated Schedule schedules = 1;
 }
 
 message CancelWorkflowRequest {
@@ -184,8 +230,10 @@ service WorkflowService {
   rpc GetWorkflowSteps(GetWorkflowStepsRequest) returns (GetWorkflowStepsResponse);
   rpc GetWorkflowEvents(GetWorkflowEventsRequest) returns (GetWorkflowEventsResponse);
   rpc GetStats(GetStatsRequest) returns (GetStatsResponse);
+  rpc GetActivity(GetActivityRequest) returns (GetActivityResponse);
   rpc ListQueueStats(ListQueueStatsRequest) returns (ListQueueStatsResponse);
   rpc ListNotifications(ListNotificationsRequest) returns (ListNotificationsResponse);
+  rpc ListSchedules(ListSchedulesRequest) returns (ListSchedulesResponse);
   rpc ListDistinctValues(ListDistinctValuesRequest) returns (ListDistinctValuesResponse);
   rpc CancelWorkflow(CancelWorkflowRequest) returns (CancelWorkflowResponse);
   rpc ResumeWorkflow(ResumeWorkflowRequest) returns (ResumeWorkflowResponse);

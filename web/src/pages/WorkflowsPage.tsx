@@ -3,6 +3,7 @@ import {
   ActionIcon,
   Badge,
   Box,
+  Button,
   Drawer,
   Group,
   Paper,
@@ -12,19 +13,28 @@ import {
   Text,
   TextInput,
   Tooltip,
+  Transition,
 } from '@mantine/core';
+import { modals } from '@mantine/modals';
 import { DatePickerInput } from '@mantine/dates';
 import { useDebouncedValue } from '@mantine/hooks';
 import {
   IconAlertTriangle,
+  IconPlayerPause,
   IconRefresh,
   IconSearch,
+  IconTrash,
   IconX,
 } from '@tabler/icons-react';
 import { DataTable, type DataTableSortStatus } from 'mantine-datatable';
 import { useSearchParams } from 'react-router-dom';
 
-import { useDistinctValues, useWorkflows } from '../api/queries';
+import {
+  useBulkCancel,
+  useBulkDelete,
+  useDistinctValues,
+  useWorkflows,
+} from '../api/queries';
 import {
   WorkflowField,
   WorkflowStatus,
@@ -66,6 +76,10 @@ type FilterShape = {
   page: number;
   size: number;
   refresh: number;
+  /** Workflow ID currently open in the detail drawer (null if closed). */
+  selected: string | null;
+  /** Drawer is in full-screen mode. */
+  expanded: boolean;
 };
 
 function readFilters(p: URLSearchParams): FilterShape {
@@ -83,6 +97,8 @@ function readFilters(p: URLSearchParams): FilterShape {
     page: Number(p.get('page') ?? '1') || 1,
     size: Number(p.get('size') ?? '25') || 25,
     refresh: Number(p.get('refresh') ?? '0') || 0,
+    selected: p.get('selected'),
+    expanded: p.get('expanded') === '1',
   };
 }
 
@@ -100,6 +116,8 @@ function writeFilters(f: FilterShape): URLSearchParams {
   if (f.page > 1) p.set('page', String(f.page));
   if (f.size !== 25) p.set('size', String(f.size));
   if (f.refresh > 0) p.set('refresh', String(f.refresh));
+  if (f.selected) p.set('selected', f.selected);
+  if (f.expanded) p.set('expanded', '1');
   return p;
 }
 
@@ -111,8 +129,14 @@ export function WorkflowsPage() {
     (patch: Partial<FilterShape>) => {
       const next = readFilters(searchParams);
       Object.assign(next, patch);
-      // Any filter change resets to page 1 unless the patch itself sets a page.
-      if (!('page' in patch)) next.page = 1;
+      // Changing a *filter* resets to page 1; changing only page/size/drawer
+      // state does not.
+      const FILTER_KEYS: (keyof FilterShape)[] = [
+        'status', 'name', 'queue', 'executor', 'version', 'user',
+        'id', 'from', 'to',
+      ];
+      const touchesFilter = FILTER_KEYS.some((k) => k in patch);
+      if (touchesFilter && !('page' in patch)) next.page = 1;
       setSearchParams(writeFilters(next), { replace: true });
     },
     [searchParams, setSearchParams],
@@ -122,8 +146,35 @@ export function WorkflowsPage() {
     columnAccessor: 'createdAt',
     direction: 'desc',
   });
-  const [openId, setOpenId] = useState<string | null>(null);
-  const [drawerExpanded, setDrawerExpanded] = useState(false);
+  const [selected, setSelected] = useState<Workflow[]>([]);
+
+  const bulkCancel = useBulkCancel();
+  const bulkDelete = useBulkDelete();
+
+  const clearSelection = () => setSelected([]);
+
+  const confirmBulk = (
+    label: string,
+    color: string,
+    run: (ids: string[]) => void,
+  ) => {
+    const ids = selected.map((wf) => wf.id);
+    modals.openConfirmModal({
+      title: `${label} ${ids.length} workflows`,
+      children: (
+        <Text size="sm">
+          {label} {ids.length} selected workflow{ids.length === 1 ? '' : 's'}?
+          This cannot be undone.
+        </Text>
+      ),
+      labels: { confirm: label, cancel: 'Back' },
+      confirmProps: { color },
+      onConfirm: () => {
+        run(ids);
+        clearSelection();
+      },
+    });
+  };
 
   // Debounce the free-text ID input so we don't refetch on every keystroke.
   const [debouncedId] = useDebouncedValue(f.id, 300);
@@ -386,31 +437,80 @@ export function WorkflowsPage() {
         sortStatus={sortStatus}
         onSortStatusChange={setSortStatus}
         idAccessor="id"
-        onRowClick={({ record }) => setOpenId(record.id)}
+        selectedRecords={selected}
+        onSelectedRecordsChange={setSelected}
+        onRowClick={({ record }) => update({ selected: record.id })}
         noRecordsText="No workflows match the current filters"
       />
 
+      {/* Floating bulk action bar */}
+      <Transition mounted={selected.length > 0} transition="slide-up" duration={150}>
+        {(styles) => (
+          <Paper
+            withBorder
+            shadow="md"
+            radius="md"
+            p="sm"
+            style={{
+              ...styles,
+              position: 'fixed',
+              bottom: 20,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 200,
+            }}
+          >
+            <Group gap="sm" wrap="nowrap">
+              <Text size="sm" fw={500}>
+                {selected.length} selected
+              </Text>
+              <Button
+                size="xs"
+                variant="light"
+                leftSection={<IconPlayerPause size={14} />}
+                color="red"
+                loading={bulkCancel.isPending}
+                onClick={() =>
+                  confirmBulk('Cancel', 'red', (ids) => bulkCancel.mutate(ids))
+                }
+              >
+                Cancel
+              </Button>
+              <Button
+                size="xs"
+                variant="light"
+                leftSection={<IconTrash size={14} />}
+                color="red"
+                loading={bulkDelete.isPending}
+                onClick={() =>
+                  confirmBulk('Delete', 'red', (ids) => bulkDelete.mutate(ids))
+                }
+              >
+                Delete
+              </Button>
+              <ActionIcon variant="subtle" color="gray" onClick={clearSelection}>
+                <IconX size={16} />
+              </ActionIcon>
+            </Group>
+          </Paper>
+        )}
+      </Transition>
+
       <Drawer
-        opened={!!openId}
-        onClose={() => {
-          setOpenId(null);
-          setDrawerExpanded(false);
-        }}
+        opened={!!f.selected}
+        onClose={() => update({ selected: null, expanded: false })}
         position="right"
-        size={drawerExpanded ? '100%' : 'xl'}
+        size={f.expanded ? '100%' : 'xl'}
         withCloseButton={false}
         keepMounted={false}
         padding={0}
       >
-        {openId && (
+        {f.selected && (
           <WorkflowDetail
-            id={openId}
-            expanded={drawerExpanded}
-            onToggleExpand={() => setDrawerExpanded((v) => !v)}
-            onClose={() => {
-              setOpenId(null);
-              setDrawerExpanded(false);
-            }}
+            id={f.selected}
+            expanded={f.expanded}
+            onToggleExpand={() => update({ expanded: !f.expanded })}
+            onClose={() => update({ selected: null, expanded: false })}
           />
         )}
       </Drawer>

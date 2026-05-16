@@ -48,12 +48,18 @@ const (
 	// WorkflowServiceGetStatsProcedure is the fully-qualified name of the WorkflowService's GetStats
 	// RPC.
 	WorkflowServiceGetStatsProcedure = "/dbosui.v1.WorkflowService/GetStats"
+	// WorkflowServiceGetActivityProcedure is the fully-qualified name of the WorkflowService's
+	// GetActivity RPC.
+	WorkflowServiceGetActivityProcedure = "/dbosui.v1.WorkflowService/GetActivity"
 	// WorkflowServiceListQueueStatsProcedure is the fully-qualified name of the WorkflowService's
 	// ListQueueStats RPC.
 	WorkflowServiceListQueueStatsProcedure = "/dbosui.v1.WorkflowService/ListQueueStats"
 	// WorkflowServiceListNotificationsProcedure is the fully-qualified name of the WorkflowService's
 	// ListNotifications RPC.
 	WorkflowServiceListNotificationsProcedure = "/dbosui.v1.WorkflowService/ListNotifications"
+	// WorkflowServiceListSchedulesProcedure is the fully-qualified name of the WorkflowService's
+	// ListSchedules RPC.
+	WorkflowServiceListSchedulesProcedure = "/dbosui.v1.WorkflowService/ListSchedules"
 	// WorkflowServiceListDistinctValuesProcedure is the fully-qualified name of the WorkflowService's
 	// ListDistinctValues RPC.
 	WorkflowServiceListDistinctValuesProcedure = "/dbosui.v1.WorkflowService/ListDistinctValues"
@@ -75,8 +81,10 @@ type WorkflowServiceClient interface {
 	GetWorkflowSteps(context.Context, *connect.Request[v1.GetWorkflowStepsRequest]) (*connect.Response[v1.GetWorkflowStepsResponse], error)
 	GetWorkflowEvents(context.Context, *connect.Request[v1.GetWorkflowEventsRequest]) (*connect.Response[v1.GetWorkflowEventsResponse], error)
 	GetStats(context.Context, *connect.Request[v1.GetStatsRequest]) (*connect.Response[v1.GetStatsResponse], error)
+	GetActivity(context.Context, *connect.Request[v1.GetActivityRequest]) (*connect.Response[v1.GetActivityResponse], error)
 	ListQueueStats(context.Context, *connect.Request[v1.ListQueueStatsRequest]) (*connect.Response[v1.ListQueueStatsResponse], error)
 	ListNotifications(context.Context, *connect.Request[v1.ListNotificationsRequest]) (*connect.Response[v1.ListNotificationsResponse], error)
+	ListSchedules(context.Context, *connect.Request[v1.ListSchedulesRequest]) (*connect.Response[v1.ListSchedulesResponse], error)
 	ListDistinctValues(context.Context, *connect.Request[v1.ListDistinctValuesRequest]) (*connect.Response[v1.ListDistinctValuesResponse], error)
 	CancelWorkflow(context.Context, *connect.Request[v1.CancelWorkflowRequest]) (*connect.Response[v1.CancelWorkflowResponse], error)
 	ResumeWorkflow(context.Context, *connect.Request[v1.ResumeWorkflowRequest]) (*connect.Response[v1.ResumeWorkflowResponse], error)
@@ -124,6 +132,12 @@ func NewWorkflowServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(workflowServiceMethods.ByName("GetStats")),
 			connect.WithClientOptions(opts...),
 		),
+		getActivity: connect.NewClient[v1.GetActivityRequest, v1.GetActivityResponse](
+			httpClient,
+			baseURL+WorkflowServiceGetActivityProcedure,
+			connect.WithSchema(workflowServiceMethods.ByName("GetActivity")),
+			connect.WithClientOptions(opts...),
+		),
 		listQueueStats: connect.NewClient[v1.ListQueueStatsRequest, v1.ListQueueStatsResponse](
 			httpClient,
 			baseURL+WorkflowServiceListQueueStatsProcedure,
@@ -134,6 +148,12 @@ func NewWorkflowServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			httpClient,
 			baseURL+WorkflowServiceListNotificationsProcedure,
 			connect.WithSchema(workflowServiceMethods.ByName("ListNotifications")),
+			connect.WithClientOptions(opts...),
+		),
+		listSchedules: connect.NewClient[v1.ListSchedulesRequest, v1.ListSchedulesResponse](
+			httpClient,
+			baseURL+WorkflowServiceListSchedulesProcedure,
+			connect.WithSchema(workflowServiceMethods.ByName("ListSchedules")),
 			connect.WithClientOptions(opts...),
 		),
 		listDistinctValues: connect.NewClient[v1.ListDistinctValuesRequest, v1.ListDistinctValuesResponse](
@@ -170,8 +190,10 @@ type workflowServiceClient struct {
 	getWorkflowSteps   *connect.Client[v1.GetWorkflowStepsRequest, v1.GetWorkflowStepsResponse]
 	getWorkflowEvents  *connect.Client[v1.GetWorkflowEventsRequest, v1.GetWorkflowEventsResponse]
 	getStats           *connect.Client[v1.GetStatsRequest, v1.GetStatsResponse]
+	getActivity        *connect.Client[v1.GetActivityRequest, v1.GetActivityResponse]
 	listQueueStats     *connect.Client[v1.ListQueueStatsRequest, v1.ListQueueStatsResponse]
 	listNotifications  *connect.Client[v1.ListNotificationsRequest, v1.ListNotificationsResponse]
+	listSchedules      *connect.Client[v1.ListSchedulesRequest, v1.ListSchedulesResponse]
 	listDistinctValues *connect.Client[v1.ListDistinctValuesRequest, v1.ListDistinctValuesResponse]
 	cancelWorkflow     *connect.Client[v1.CancelWorkflowRequest, v1.CancelWorkflowResponse]
 	resumeWorkflow     *connect.Client[v1.ResumeWorkflowRequest, v1.ResumeWorkflowResponse]
@@ -203,6 +225,11 @@ func (c *workflowServiceClient) GetStats(ctx context.Context, req *connect.Reque
 	return c.getStats.CallUnary(ctx, req)
 }
 
+// GetActivity calls dbosui.v1.WorkflowService.GetActivity.
+func (c *workflowServiceClient) GetActivity(ctx context.Context, req *connect.Request[v1.GetActivityRequest]) (*connect.Response[v1.GetActivityResponse], error) {
+	return c.getActivity.CallUnary(ctx, req)
+}
+
 // ListQueueStats calls dbosui.v1.WorkflowService.ListQueueStats.
 func (c *workflowServiceClient) ListQueueStats(ctx context.Context, req *connect.Request[v1.ListQueueStatsRequest]) (*connect.Response[v1.ListQueueStatsResponse], error) {
 	return c.listQueueStats.CallUnary(ctx, req)
@@ -211,6 +238,11 @@ func (c *workflowServiceClient) ListQueueStats(ctx context.Context, req *connect
 // ListNotifications calls dbosui.v1.WorkflowService.ListNotifications.
 func (c *workflowServiceClient) ListNotifications(ctx context.Context, req *connect.Request[v1.ListNotificationsRequest]) (*connect.Response[v1.ListNotificationsResponse], error) {
 	return c.listNotifications.CallUnary(ctx, req)
+}
+
+// ListSchedules calls dbosui.v1.WorkflowService.ListSchedules.
+func (c *workflowServiceClient) ListSchedules(ctx context.Context, req *connect.Request[v1.ListSchedulesRequest]) (*connect.Response[v1.ListSchedulesResponse], error) {
+	return c.listSchedules.CallUnary(ctx, req)
 }
 
 // ListDistinctValues calls dbosui.v1.WorkflowService.ListDistinctValues.
@@ -240,8 +272,10 @@ type WorkflowServiceHandler interface {
 	GetWorkflowSteps(context.Context, *connect.Request[v1.GetWorkflowStepsRequest]) (*connect.Response[v1.GetWorkflowStepsResponse], error)
 	GetWorkflowEvents(context.Context, *connect.Request[v1.GetWorkflowEventsRequest]) (*connect.Response[v1.GetWorkflowEventsResponse], error)
 	GetStats(context.Context, *connect.Request[v1.GetStatsRequest]) (*connect.Response[v1.GetStatsResponse], error)
+	GetActivity(context.Context, *connect.Request[v1.GetActivityRequest]) (*connect.Response[v1.GetActivityResponse], error)
 	ListQueueStats(context.Context, *connect.Request[v1.ListQueueStatsRequest]) (*connect.Response[v1.ListQueueStatsResponse], error)
 	ListNotifications(context.Context, *connect.Request[v1.ListNotificationsRequest]) (*connect.Response[v1.ListNotificationsResponse], error)
+	ListSchedules(context.Context, *connect.Request[v1.ListSchedulesRequest]) (*connect.Response[v1.ListSchedulesResponse], error)
 	ListDistinctValues(context.Context, *connect.Request[v1.ListDistinctValuesRequest]) (*connect.Response[v1.ListDistinctValuesResponse], error)
 	CancelWorkflow(context.Context, *connect.Request[v1.CancelWorkflowRequest]) (*connect.Response[v1.CancelWorkflowResponse], error)
 	ResumeWorkflow(context.Context, *connect.Request[v1.ResumeWorkflowRequest]) (*connect.Response[v1.ResumeWorkflowResponse], error)
@@ -285,6 +319,12 @@ func NewWorkflowServiceHandler(svc WorkflowServiceHandler, opts ...connect.Handl
 		connect.WithSchema(workflowServiceMethods.ByName("GetStats")),
 		connect.WithHandlerOptions(opts...),
 	)
+	workflowServiceGetActivityHandler := connect.NewUnaryHandler(
+		WorkflowServiceGetActivityProcedure,
+		svc.GetActivity,
+		connect.WithSchema(workflowServiceMethods.ByName("GetActivity")),
+		connect.WithHandlerOptions(opts...),
+	)
 	workflowServiceListQueueStatsHandler := connect.NewUnaryHandler(
 		WorkflowServiceListQueueStatsProcedure,
 		svc.ListQueueStats,
@@ -295,6 +335,12 @@ func NewWorkflowServiceHandler(svc WorkflowServiceHandler, opts ...connect.Handl
 		WorkflowServiceListNotificationsProcedure,
 		svc.ListNotifications,
 		connect.WithSchema(workflowServiceMethods.ByName("ListNotifications")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workflowServiceListSchedulesHandler := connect.NewUnaryHandler(
+		WorkflowServiceListSchedulesProcedure,
+		svc.ListSchedules,
+		connect.WithSchema(workflowServiceMethods.ByName("ListSchedules")),
 		connect.WithHandlerOptions(opts...),
 	)
 	workflowServiceListDistinctValuesHandler := connect.NewUnaryHandler(
@@ -333,10 +379,14 @@ func NewWorkflowServiceHandler(svc WorkflowServiceHandler, opts ...connect.Handl
 			workflowServiceGetWorkflowEventsHandler.ServeHTTP(w, r)
 		case WorkflowServiceGetStatsProcedure:
 			workflowServiceGetStatsHandler.ServeHTTP(w, r)
+		case WorkflowServiceGetActivityProcedure:
+			workflowServiceGetActivityHandler.ServeHTTP(w, r)
 		case WorkflowServiceListQueueStatsProcedure:
 			workflowServiceListQueueStatsHandler.ServeHTTP(w, r)
 		case WorkflowServiceListNotificationsProcedure:
 			workflowServiceListNotificationsHandler.ServeHTTP(w, r)
+		case WorkflowServiceListSchedulesProcedure:
+			workflowServiceListSchedulesHandler.ServeHTTP(w, r)
 		case WorkflowServiceListDistinctValuesProcedure:
 			workflowServiceListDistinctValuesHandler.ServeHTTP(w, r)
 		case WorkflowServiceCancelWorkflowProcedure:
@@ -374,12 +424,20 @@ func (UnimplementedWorkflowServiceHandler) GetStats(context.Context, *connect.Re
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dbosui.v1.WorkflowService.GetStats is not implemented"))
 }
 
+func (UnimplementedWorkflowServiceHandler) GetActivity(context.Context, *connect.Request[v1.GetActivityRequest]) (*connect.Response[v1.GetActivityResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dbosui.v1.WorkflowService.GetActivity is not implemented"))
+}
+
 func (UnimplementedWorkflowServiceHandler) ListQueueStats(context.Context, *connect.Request[v1.ListQueueStatsRequest]) (*connect.Response[v1.ListQueueStatsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dbosui.v1.WorkflowService.ListQueueStats is not implemented"))
 }
 
 func (UnimplementedWorkflowServiceHandler) ListNotifications(context.Context, *connect.Request[v1.ListNotificationsRequest]) (*connect.Response[v1.ListNotificationsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dbosui.v1.WorkflowService.ListNotifications is not implemented"))
+}
+
+func (UnimplementedWorkflowServiceHandler) ListSchedules(context.Context, *connect.Request[v1.ListSchedulesRequest]) (*connect.Response[v1.ListSchedulesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("dbosui.v1.WorkflowService.ListSchedules is not implemented"))
 }
 
 func (UnimplementedWorkflowServiceHandler) ListDistinctValues(context.Context, *connect.Request[v1.ListDistinctValuesRequest]) (*connect.Response[v1.ListDistinctValuesResponse], error) {

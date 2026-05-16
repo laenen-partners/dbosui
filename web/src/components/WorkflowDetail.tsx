@@ -39,8 +39,14 @@ import {
   useWorkflowSteps,
 } from '../api/queries';
 import { WorkflowStatus } from '../gen/dbosui/v1/workflows_pb';
-import { STATUS_COLOR, STATUS_LABEL, formatTimestamp } from '../lib/format';
+import {
+  STATUS_COLOR,
+  STATUS_LABEL,
+  formatDuration,
+  formatTimestamp,
+} from '../lib/format';
 import { JsonBlock } from './JsonBlock';
+import { StepsTimeline } from './StepsTimeline';
 
 type Props = {
   id: string;
@@ -256,40 +262,56 @@ export function WorkflowDetail({ id, expanded, onToggleExpand, onClose }: Props)
             {stepsQuery.isLoading ? (
               <Loader size="sm" />
             ) : stepsQuery.data?.steps?.length ? (
-              <Card withBorder radius="md" p={0}>
-                <Table verticalSpacing="sm" horizontalSpacing="md">
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Th w={50}>#</Table.Th>
-                      <Table.Th>Name</Table.Th>
-                      <Table.Th>Output / Error</Table.Th>
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {stepsQuery.data.steps.map((s) => (
-                      <Table.Tr key={s.stepId}>
-                        <Table.Td>
-                          <Text c="dimmed" size="sm">
-                            {s.stepId}
-                          </Text>
-                        </Table.Td>
-                        <Table.Td>
-                          <Text fw={500}>{s.name}</Text>
-                        </Table.Td>
-                        <Table.Td>
-                          {s.error ? (
-                            <Code block c="red">
-                              {s.error}
-                            </Code>
-                          ) : (
-                            <JsonBlock value={s.outputJson} />
-                          )}
-                        </Table.Td>
+              <Stack gap="md">
+                <Card withBorder radius="md" p="md">
+                  <StepsTimeline steps={stepsQuery.data.steps} />
+                </Card>
+                <Card withBorder radius="md" p={0}>
+                  <Table verticalSpacing="sm" horizontalSpacing="md">
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th w={50}>#</Table.Th>
+                        <Table.Th>Name</Table.Th>
+                        <Table.Th w={100}>Duration</Table.Th>
+                        <Table.Th>Output / Error</Table.Th>
                       </Table.Tr>
-                    ))}
-                  </Table.Tbody>
-                </Table>
-              </Card>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {stepsQuery.data.steps.map((s) => (
+                        <Table.Tr key={s.stepId}>
+                          <Table.Td>
+                            <Text c="dimmed" size="sm">
+                              {s.stepId}
+                            </Text>
+                          </Table.Td>
+                          <Table.Td>
+                            <Text fw={500}>{s.name}</Text>
+                            {s.childWorkflowId && (
+                              <Text size="xs" c="dimmed" ff="monospace">
+                                → {s.childWorkflowId}
+                              </Text>
+                            )}
+                          </Table.Td>
+                          <Table.Td>
+                            <Text size="sm" c="dimmed">
+                              {formatDuration(s.startedAt, s.completedAt)}
+                            </Text>
+                          </Table.Td>
+                          <Table.Td>
+                            {s.error ? (
+                              <Code block c="red">
+                                {s.error}
+                              </Code>
+                            ) : (
+                              <JsonBlock value={s.outputJson} />
+                            )}
+                          </Table.Td>
+                        </Table.Tr>
+                      ))}
+                    </Table.Tbody>
+                  </Table>
+                </Card>
+              </Stack>
             ) : (
               <EmptyState text="No steps recorded for this workflow." />
             )}

@@ -71,12 +71,20 @@ func (s *workflowService) GetWorkflowSteps(ctx context.Context, req *connect.Req
 	}
 	out := &dbosuiv1.GetWorkflowStepsResponse{Steps: make([]*dbosuiv1.Step, len(steps))}
 	for i, s := range steps {
-		out.Steps[i] = &dbosuiv1.Step{
-			StepId:     int32(s.StepID),
-			Name:       s.Name,
-			OutputJson: jsonOrPassthrough(s.Output),
-			Error:      s.Error,
+		step := &dbosuiv1.Step{
+			StepId:          int32(s.StepID),
+			Name:            s.Name,
+			OutputJson:      jsonOrPassthrough(s.Output),
+			Error:           s.Error,
+			ChildWorkflowId: s.ChildWorkflowID,
 		}
+		if !s.StartedAt.IsZero() {
+			step.StartedAt = timestamppb.New(s.StartedAt)
+		}
+		if !s.CompletedAt.IsZero() {
+			step.CompletedAt = timestamppb.New(s.CompletedAt)
+		}
+		out.Steps[i] = step
 	}
 	return connect.NewResponse(out), nil
 }
@@ -89,6 +97,32 @@ func (s *workflowService) GetWorkflowEvents(ctx context.Context, req *connect.Re
 	out := &dbosuiv1.GetWorkflowEventsResponse{Events: make([]*dbosuiv1.Event, len(events))}
 	for i, e := range events {
 		out.Events[i] = &dbosuiv1.Event{Key: e.Key, Value: e.Value}
+	}
+	return connect.NewResponse(out), nil
+}
+
+func (s *workflowService) ListSchedules(ctx context.Context, _ *connect.Request[dbosuiv1.ListSchedulesRequest]) (*connect.Response[dbosuiv1.ListSchedulesResponse], error) {
+	schedules, err := s.client.ListSchedules(ctx)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("list schedules: %w", err))
+	}
+	out := &dbosuiv1.ListSchedulesResponse{Schedules: make([]*dbosuiv1.Schedule, len(schedules))}
+	for i, sched := range schedules {
+		p := &dbosuiv1.Schedule{
+			ScheduleId:        sched.ScheduleID,
+			ScheduleName:      sched.ScheduleName,
+			WorkflowName:      sched.WorkflowName,
+			WorkflowClassName: sched.WorkflowClassName,
+			Schedule:          sched.Schedule,
+			Status:            sched.Status,
+			CronTimezone:      sched.CronTimezone,
+			QueueName:         sched.QueueName,
+			AutomaticBackfill: sched.AutomaticBackfill,
+		}
+		if !sched.LastFiredAt.IsZero() {
+			p.LastFiredAt = timestamppb.New(sched.LastFiredAt)
+		}
+		out.Schedules[i] = p
 	}
 	return connect.NewResponse(out), nil
 }
@@ -114,6 +148,25 @@ func (s *workflowService) ListNotifications(ctx context.Context, req *connect.Re
 			Topic:                 n.Topic,
 			Message:               n.Message,
 			CreatedAt:             timestamppb.New(n.CreatedAt),
+		}
+	}
+	return connect.NewResponse(out), nil
+}
+
+func (s *workflowService) GetActivity(ctx context.Context, req *connect.Request[dbosuiv1.GetActivityRequest]) (*connect.Response[dbosuiv1.GetActivityResponse], error) {
+	buckets, err := s.client.GetActivity(ctx, int(req.Msg.GetHours()))
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("get activity: %w", err))
+	}
+	out := &dbosuiv1.GetActivityResponse{Buckets: make([]*dbosuiv1.ActivityBucket, len(buckets))}
+	for i, b := range buckets {
+		out.Buckets[i] = &dbosuiv1.ActivityBucket{
+			EndTime:   timestamppb.New(b.EndTime),
+			Total:     int32(b.Total),
+			Success:   int32(b.Success),
+			Failed:    int32(b.Failed),
+			Pending:   int32(b.Pending),
+			Cancelled: int32(b.Cancelled),
 		}
 	}
 	return connect.NewResponse(out), nil

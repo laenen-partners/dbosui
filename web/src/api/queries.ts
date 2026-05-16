@@ -58,10 +58,26 @@ export function useStats() {
   });
 }
 
+export function useActivity(hours = 24) {
+  return useQuery({
+    queryKey: ['activity', hours],
+    queryFn: () => workflowClient.getActivity({ hours }),
+    staleTime: 30_000,
+  });
+}
+
 export function useQueueStats() {
   return useQuery({
     queryKey: ['queue-stats'],
     queryFn: () => workflowClient.listQueueStats({}),
+  });
+}
+
+export function useSchedules() {
+  return useQuery({
+    queryKey: ['schedules'],
+    queryFn: () => workflowClient.listSchedules({}),
+    staleTime: 60_000,
   });
 }
 
@@ -121,6 +137,59 @@ export function useWorkflowEvents(id: string | null) {
 function invalidateWorkflowQueries(qc: ReturnType<typeof useQueryClient>) {
   qc.invalidateQueries({ queryKey: ['workflows'] });
   qc.invalidateQueries({ queryKey: ['stats'] });
+  qc.invalidateQueries({ queryKey: ['activity'] });
+  qc.invalidateQueries({ queryKey: ['queue-stats'] });
+}
+
+/** Runs an action over a list of IDs in parallel, counts success/failure. */
+async function runBulk(
+  ids: string[],
+  action: (id: string) => Promise<unknown>,
+): Promise<{ ok: number; failed: number }> {
+  const results = await Promise.allSettled(ids.map(action));
+  let ok = 0;
+  let failed = 0;
+  for (const r of results) {
+    if (r.status === 'fulfilled') ok++;
+    else failed++;
+  }
+  return { ok, failed };
+}
+
+export function useBulkCancel() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) =>
+      runBulk(ids, (id) => workflowClient.cancelWorkflow({ id })),
+    onSuccess: ({ ok, failed }, ids) => {
+      notifications.show({
+        color: failed > 0 ? 'orange' : 'green',
+        message:
+          failed > 0
+            ? `Cancelled ${ok} of ${ids.length} workflows (${failed} failed)`
+            : `Cancelled ${ok} workflows`,
+      });
+      invalidateWorkflowQueries(qc);
+    },
+  });
+}
+
+export function useBulkDelete() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) =>
+      runBulk(ids, (id) => workflowClient.deleteWorkflow({ id })),
+    onSuccess: ({ ok, failed }, ids) => {
+      notifications.show({
+        color: failed > 0 ? 'orange' : 'green',
+        message:
+          failed > 0
+            ? `Deleted ${ok} of ${ids.length} workflows (${failed} failed)`
+            : `Deleted ${ok} workflows`,
+      });
+      invalidateWorkflowQueries(qc);
+    },
+  });
 }
 
 export function useCancelWorkflow() {

@@ -47,10 +47,13 @@ type WorkflowInfo struct {
 
 // StepInfo holds details about a single workflow step.
 type StepInfo struct {
-	StepID int
-	Name   string
-	Output any
-	Error  string
+	StepID          int
+	Name            string
+	Output          any
+	Error           string
+	StartedAt       time.Time
+	CompletedAt     time.Time
+	ChildWorkflowID string
 }
 
 // EventInfo holds a key-value pair set via dbos.SetEvent.
@@ -104,6 +107,16 @@ type Stats struct {
 	Cancelled int
 }
 
+// ActivityBucket is a per-hour count of workflows ending in the bucket.
+type ActivityBucket struct {
+	EndTime   time.Time
+	Total     int
+	Success   int
+	Failed    int
+	Pending   int
+	Cancelled int
+}
+
 // QueueStats holds per-queue rollup counts.
 type QueueStats struct {
 	QueueName string
@@ -139,13 +152,30 @@ type NotificationsResult struct {
 	Total         int
 }
 
+// Schedule mirrors a row in dbos.workflow_schedules — a registered cron or
+// interval-driven workflow.
+type Schedule struct {
+	ScheduleID        string
+	ScheduleName      string
+	WorkflowName      string
+	WorkflowClassName string
+	Schedule          string
+	Status            string
+	LastFiredAt       time.Time
+	CronTimezone      string
+	QueueName         string
+	AutomaticBackfill bool
+}
+
 // Client abstracts access to DBOS workflow data.
 // Implement this interface using the DBOS Go client or direct SQL (sqlc).
 type Client interface {
 	ListWorkflows(ctx context.Context, filter ListFilter) (*ListResult, error)
 	ListDistinctValues(ctx context.Context, field DistinctField) ([]string, error)
 	ListQueueStats(ctx context.Context) ([]QueueStats, error)
+	GetActivity(ctx context.Context, hours int) ([]ActivityBucket, error)
 	ListNotifications(ctx context.Context, filter NotificationsFilter) (*NotificationsResult, error)
+	ListSchedules(ctx context.Context) ([]Schedule, error)
 	GetWorkflow(ctx context.Context, id string) (*WorkflowInfo, error)
 	GetWorkflowSteps(ctx context.Context, id string) ([]StepInfo, error)
 	GetWorkflowEvents(ctx context.Context, id string) ([]EventInfo, error)
@@ -162,6 +192,7 @@ func MockClient() Client {
 type mockClient struct {
 	workflows     []WorkflowInfo
 	notifications []Notification
+	schedules     []Schedule
 }
 
 func newMockClient() *mockClient {
@@ -220,7 +251,36 @@ func newMockClient() *mockClient {
 		{DestinationWorkflowID: wfs[7].ID, Topic: "user.signup", Message: `{"user_id":"u-991"}`, CreatedAt: now.Add(-1 * time.Hour)},
 	}
 
-	return &mockClient{workflows: wfs, notifications: notifications}
+	schedules := []Schedule{
+		{
+			ScheduleID:   "sched-cleanup",
+			ScheduleName: "nightly-cleanup",
+			WorkflowName: "BackupDatabase",
+			Schedule:     "0 3 * * *",
+			Status:       "ACTIVE",
+			LastFiredAt:  now.Add(-7*time.Hour - 12*time.Minute),
+			CronTimezone: "UTC",
+			QueueName:    "billing-queue",
+		},
+		{
+			ScheduleID:   "sched-recon",
+			ScheduleName: "hourly-reconcile",
+			WorkflowName: "ReconcileAccounts",
+			Schedule:     "@hourly",
+			Status:       "ACTIVE",
+			LastFiredAt:  now.Add(-23 * time.Minute),
+			CronTimezone: "UTC",
+		},
+		{
+			ScheduleID:   "sched-reports",
+			ScheduleName: "weekly-report",
+			WorkflowName: "GenerateReport",
+			Schedule:     "0 9 * * 1",
+			Status:       "PAUSED",
+		},
+	}
+
+	return &mockClient{workflows: wfs, notifications: notifications, schedules: schedules}
 }
 
 func (m *mockClient) ListWorkflows(_ context.Context, filter ListFilter) (*ListResult, error) {
@@ -293,6 +353,12 @@ func (m *mockClient) ListWorkflows(_ context.Context, filter ListFilter) (*ListR
 	return &ListResult{Workflows: filtered, Total: total}, nil
 }
 
+func (m *mockClient) ListSchedules(_ context.Context) ([]Schedule, error) {
+	out := make([]Schedule, len(m.schedules))
+	copy(out, m.schedules)
+	return out, nil
+}
+
 func (m *mockClient) ListNotifications(_ context.Context, filter NotificationsFilter) (*NotificationsResult, error) {
 	var filtered []Notification
 	for _, n := range m.notifications {
@@ -322,6 +388,38 @@ func (m *mockClient) ListNotifications(_ context.Context, filter NotificationsFi
 		end = total
 	}
 	return &NotificationsResult{Notifications: filtered[offset:end], Total: total}, nil
+}
+
+func (m *mockClient) GetActivity(_ context.Context, hours int) ([]ActivityBucket, error) {
+	if hours <= 0 {
+		hours = 24
+	}
+	now := time.Now().Truncate(time.Hour).Add(time.Hour)
+	buckets := make([]ActivityBucket, hours)
+	for i := range buckets {
+		buckets[i].EndTime = now.Add(-time.Duration(hours-1-i) * time.Hour)
+	}
+	for _, wf := range m.workflows {
+		// Bucket by created_at; the bucket whose end > created_at and (end - 1h) <= created_at.
+		hoursAgo := int(now.Sub(wf.CreatedAt) / time.Hour)
+		idx := hours - 1 - hoursAgo
+		if idx < 0 || idx >= hours {
+			continue
+		}
+		b := &buckets[idx]
+		b.Total++
+		switch wf.Status {
+		case StatusPending, StatusEnqueued:
+			b.Pending++
+		case StatusSuccess:
+			b.Success++
+		case StatusError, StatusRetries:
+			b.Failed++
+		case StatusCancelled:
+			b.Cancelled++
+		}
+	}
+	return buckets, nil
 }
 
 func (m *mockClient) ListQueueStats(_ context.Context) ([]QueueStats, error) {
@@ -403,14 +501,20 @@ func (m *mockClient) GetWorkflowSteps(_ context.Context, id string) ([]StepInfo,
 		if wf.ID != id {
 			continue
 		}
+		// Synthesise step timestamps so the timeline view has something to show.
+		t := wf.CreatedAt
+		s1Start, s1End := t.Add(50*time.Millisecond), t.Add(420*time.Millisecond)
+		s2Start, s2End := s1End.Add(80*time.Millisecond), s1End.Add(1*time.Second+150*time.Millisecond)
+		s3Start, s3End := s2End.Add(120*time.Millisecond), s2End.Add(620*time.Millisecond)
+
 		steps := []StepInfo{
-			{StepID: 1, Name: "validate_input", Output: map[string]any{"valid": true}},
-			{StepID: 2, Name: "process_data", Output: map[string]any{"rows": 42}},
+			{StepID: 1, Name: "validate_input", Output: map[string]any{"valid": true}, StartedAt: s1Start, CompletedAt: s1End},
+			{StepID: 2, Name: "process_data", Output: map[string]any{"rows": 42}, StartedAt: s2Start, CompletedAt: s2End},
 		}
 		if wf.Status == StatusError {
-			steps = append(steps, StepInfo{StepID: 3, Name: "finalize", Error: wf.Error})
+			steps = append(steps, StepInfo{StepID: 3, Name: "finalize", Error: wf.Error, StartedAt: s3Start, CompletedAt: s3End})
 		} else if wf.Status == StatusSuccess {
-			steps = append(steps, StepInfo{StepID: 3, Name: "finalize", Output: map[string]any{"status": "complete"}})
+			steps = append(steps, StepInfo{StepID: 3, Name: "finalize", Output: map[string]any{"status": "complete"}, StartedAt: s3Start, CompletedAt: s3End})
 		}
 		return steps, nil
 	}

@@ -244,6 +244,56 @@ func (c *DBOSClient) listWorkflowsDirect(ctx context.Context, filter ListFilter)
 	return &ListResult{Workflows: workflows, Total: total}, nil
 }
 
+// ListSchedules queries dbos.workflow_schedules for registered cron and
+// interval-scheduled workflows. If the table does not exist (older DBOS
+// installs that haven't run migration 9), returns an empty slice rather than
+// an error so the Schedules tab degrades gracefully.
+func (c *DBOSClient) ListSchedules(ctx context.Context) ([]Schedule, error) {
+	query := fmt.Sprintf(
+		`SELECT
+		   schedule_id,
+		   schedule_name,
+		   workflow_name,
+		   COALESCE(workflow_class_name,''),
+		   schedule,
+		   status,
+		   last_fired_at,
+		   COALESCE(cron_timezone,''),
+		   COALESCE(queue_name,''),
+		   COALESCE(automatic_backfill,false)
+		 FROM %s.workflow_schedules
+		 ORDER BY schedule_name`,
+		c.schema,
+	)
+	rows, err := c.pool.Query(ctx, query)
+	if err != nil {
+		// Tolerate the table-missing case on older DBOS schemas.
+		if strings.Contains(err.Error(), "does not exist") {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("dbosui: query schedules: %w", err)
+	}
+	defer rows.Close()
+
+	var schedules []Schedule
+	for rows.Next() {
+		var s Schedule
+		var lastFired *time.Time
+		if err := rows.Scan(
+			&s.ScheduleID, &s.ScheduleName, &s.WorkflowName, &s.WorkflowClassName,
+			&s.Schedule, &s.Status, &lastFired,
+			&s.CronTimezone, &s.QueueName, &s.AutomaticBackfill,
+		); err != nil {
+			return nil, fmt.Errorf("dbosui: scan schedule: %w", err)
+		}
+		if lastFired != nil {
+			s.LastFiredAt = *lastFired
+		}
+		schedules = append(schedules, s)
+	}
+	return schedules, nil
+}
+
 // ListNotifications queries the dbos.notifications table — the inbox of
 // messages sent via dbos.Send and awaiting consumption by dbos.Recv.
 func (c *DBOSClient) ListNotifications(ctx context.Context, filter NotificationsFilter) (*NotificationsResult, error) {
@@ -301,6 +351,65 @@ func (c *DBOSClient) ListNotifications(ctx context.Context, filter Notifications
 		notifications = append(notifications, n)
 	}
 	return &NotificationsResult{Notifications: notifications, Total: total}, nil
+}
+
+// GetActivity returns per-hour workflow counts over the last `hours` hours,
+// in chronological order. Each bucket is one hour wide, ending at the hour
+// boundary at or after now. Counts are grouped by status.
+func (c *DBOSClient) GetActivity(ctx context.Context, hours int) ([]ActivityBucket, error) {
+	if hours <= 0 {
+		hours = 24
+	}
+	now := time.Now().Truncate(time.Hour).Add(time.Hour)
+	cutoff := now.Add(-time.Duration(hours) * time.Hour)
+
+	query := fmt.Sprintf(
+		`SELECT
+		   (created_at / 3600000)::bigint AS bucket_hour_epoch,
+		   status,
+		   COUNT(*)
+		 FROM %s.workflow_status
+		 WHERE created_at >= $1
+		 GROUP BY bucket_hour_epoch, status`,
+		c.schema,
+	)
+	rows, err := c.pool.Query(ctx, query, cutoff.UnixMilli())
+	if err != nil {
+		return nil, fmt.Errorf("dbosui: query activity: %w", err)
+	}
+	defer rows.Close()
+
+	buckets := make([]ActivityBucket, hours)
+	for i := range buckets {
+		buckets[i].EndTime = now.Add(-time.Duration(hours-1-i) * time.Hour)
+	}
+
+	for rows.Next() {
+		var bucketHourEpoch int64
+		var status string
+		var count int
+		if err := rows.Scan(&bucketHourEpoch, &status, &count); err != nil {
+			return nil, fmt.Errorf("dbosui: scan activity: %w", err)
+		}
+		bucketEnd := time.Unix(0, 0).Add(time.Duration(bucketHourEpoch+1) * time.Hour)
+		idx := int(bucketEnd.Sub(cutoff) / time.Hour) - 1
+		if idx < 0 || idx >= hours {
+			continue
+		}
+		b := &buckets[idx]
+		b.Total += count
+		switch WorkflowStatus(status) {
+		case StatusPending, StatusEnqueued:
+			b.Pending += count
+		case StatusSuccess:
+			b.Success += count
+		case StatusError, StatusRetries:
+			b.Failed += count
+		case StatusCancelled:
+			b.Cancelled += count
+		}
+	}
+	return buckets, nil
 }
 
 // ListQueueStats returns per-queue rollup counts grouped by status, ordered
@@ -425,9 +534,12 @@ func (c *DBOSClient) GetWorkflowSteps(ctx context.Context, id string) ([]StepInf
 	result := make([]StepInfo, len(steps))
 	for i, s := range steps {
 		result[i] = StepInfo{
-			StepID: s.StepID,
-			Name:   s.StepName,
-			Output: s.Output,
+			StepID:          s.StepID,
+			Name:            s.StepName,
+			Output:          s.Output,
+			StartedAt:       s.StartedAt,
+			CompletedAt:     s.CompletedAt,
+			ChildWorkflowID: s.ChildWorkflowID,
 		}
 		if s.Error != nil {
 			result[i].Error = s.Error.Error()
