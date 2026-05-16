@@ -49,7 +49,12 @@ func (c *DBOSClient) Shutdown(timeout time.Duration) {
 
 func (c *DBOSClient) ListWorkflows(ctx context.Context, filter ListFilter) (*ListResult, error) {
 	// Filters not supported by the SDK route us to the direct-SQL path.
-	if filter.Name != "" || filter.QueueName != "" || filter.ExecutorID != "" || filter.ApplicationVersion != "" {
+	if filter.Name != "" ||
+		filter.QueueName != "" ||
+		filter.ExecutorID != "" ||
+		filter.ApplicationVersion != "" ||
+		!filter.CreatedAfter.IsZero() ||
+		!filter.CreatedBefore.IsZero() {
 		return c.listWorkflowsDirect(ctx, filter)
 	}
 
@@ -144,6 +149,16 @@ func buildFilterWhere(filter ListFilter, argIdx int) (string, []any, int) {
 	if filter.ApplicationVersion != "" {
 		where += fmt.Sprintf(" AND application_version = $%d", argIdx)
 		args = append(args, filter.ApplicationVersion)
+		argIdx++
+	}
+	if !filter.CreatedAfter.IsZero() {
+		where += fmt.Sprintf(" AND created_at >= $%d", argIdx)
+		args = append(args, filter.CreatedAfter.UnixMilli())
+		argIdx++
+	}
+	if !filter.CreatedBefore.IsZero() {
+		where += fmt.Sprintf(" AND created_at <= $%d", argIdx)
+		args = append(args, filter.CreatedBefore.UnixMilli())
 		argIdx++
 	}
 

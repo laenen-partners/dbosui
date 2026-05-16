@@ -31,6 +31,12 @@ func (s *workflowService) ListWorkflows(ctx context.Context, req *connect.Reques
 		ExecutorID:         msg.GetExecutorId(),
 		ApplicationVersion: msg.GetApplicationVersion(),
 	}
+	if ts := msg.GetCreatedAfter(); ts != nil {
+		filter.CreatedAfter = ts.AsTime()
+	}
+	if ts := msg.GetCreatedBefore(); ts != nil {
+		filter.CreatedBefore = ts.AsTime()
+	}
 	for _, st := range msg.GetStatuses() {
 		filter.Status = append(filter.Status, statusFromProto(st))
 	}

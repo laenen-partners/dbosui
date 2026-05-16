@@ -500,8 +500,12 @@ type ListWorkflowsRequest struct {
 	QueueName          string                 `protobuf:"bytes,8,opt,name=queue_name,json=queueName,proto3" json:"queue_name,omitempty"`
 	ExecutorId         string                 `protobuf:"bytes,9,opt,name=executor_id,json=executorId,proto3" json:"executor_id,omitempty"`
 	ApplicationVersion string                 `protobuf:"bytes,10,opt,name=application_version,json=applicationVersion,proto3" json:"application_version,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// Inclusive lower bound on created_at.
+	CreatedAfter *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created_after,json=createdAfter,proto3" json:"created_after,omitempty"`
+	// Inclusive upper bound on created_at.
+	CreatedBefore *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=created_before,json=createdBefore,proto3" json:"created_before,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListWorkflowsRequest) Reset() {
@@ -602,6 +606,20 @@ func (x *ListWorkflowsRequest) GetApplicationVersion() string {
 		return x.ApplicationVersion
 	}
 	return ""
+}
+
+func (x *ListWorkflowsRequest) GetCreatedAfter() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAfter
+	}
+	return nil
+}
+
+func (x *ListWorkflowsRequest) GetCreatedBefore() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedBefore
+	}
+	return nil
 }
 
 type ListWorkflowsResponse struct {
@@ -1729,7 +1747,7 @@ const file_dbosui_v1_workflows_proto_rawDesc = "" +
 	"\apending\x18\x02 \x01(\x05R\apending\x12\x18\n" +
 	"\asuccess\x18\x03 \x01(\x05R\asuccess\x12\x16\n" +
 	"\x06failed\x18\x04 \x01(\x05R\x06failed\x12\x1c\n" +
-	"\tcancelled\x18\x05 \x01(\x05R\tcancelled\"\xce\x02\n" +
+	"\tcancelled\x18\x05 \x01(\x05R\tcancelled\"\xd2\x03\n" +
 	"\x14ListWorkflowsRequest\x125\n" +
 	"\bstatuses\x18\x01 \x03(\x0e2\x19.dbosui.v1.WorkflowStatusR\bstatuses\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
@@ -1743,7 +1761,9 @@ const file_dbosui_v1_workflows_proto_rawDesc = "" +
 	"\vexecutor_id\x18\t \x01(\tR\n" +
 	"executorId\x12/\n" +
 	"\x13application_version\x18\n" +
-	" \x01(\tR\x12applicationVersion\"`\n" +
+	" \x01(\tR\x12applicationVersion\x12?\n" +
+	"\rcreated_after\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\fcreatedAfter\x12A\n" +
+	"\x0ecreated_before\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\rcreatedBefore\"`\n" +
 	"\x15ListWorkflowsResponse\x121\n" +
 	"\tworkflows\x18\x01 \x03(\v2\x13.dbosui.v1.WorkflowR\tworkflows\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x05R\x05total\"$\n" +
@@ -1882,42 +1902,44 @@ var file_dbosui_v1_workflows_proto_depIdxs = []int32{
 	30, // 1: dbosui.v1.Workflow.created_at:type_name -> google.protobuf.Timestamp
 	30, // 2: dbosui.v1.Workflow.updated_at:type_name -> google.protobuf.Timestamp
 	0,  // 3: dbosui.v1.ListWorkflowsRequest.statuses:type_name -> dbosui.v1.WorkflowStatus
-	2,  // 4: dbosui.v1.ListWorkflowsResponse.workflows:type_name -> dbosui.v1.Workflow
-	2,  // 5: dbosui.v1.GetWorkflowResponse.workflow:type_name -> dbosui.v1.Workflow
-	3,  // 6: dbosui.v1.GetWorkflowStepsResponse.steps:type_name -> dbosui.v1.Step
-	4,  // 7: dbosui.v1.GetWorkflowEventsResponse.events:type_name -> dbosui.v1.Event
-	5,  // 8: dbosui.v1.GetStatsResponse.stats:type_name -> dbosui.v1.Stats
-	16, // 9: dbosui.v1.ListQueueStatsResponse.queues:type_name -> dbosui.v1.QueueStats
-	30, // 10: dbosui.v1.Notification.created_at:type_name -> google.protobuf.Timestamp
-	19, // 11: dbosui.v1.ListNotificationsResponse.notifications:type_name -> dbosui.v1.Notification
-	1,  // 12: dbosui.v1.ListDistinctValuesRequest.field:type_name -> dbosui.v1.WorkflowField
-	6,  // 13: dbosui.v1.WorkflowService.ListWorkflows:input_type -> dbosui.v1.ListWorkflowsRequest
-	8,  // 14: dbosui.v1.WorkflowService.GetWorkflow:input_type -> dbosui.v1.GetWorkflowRequest
-	10, // 15: dbosui.v1.WorkflowService.GetWorkflowSteps:input_type -> dbosui.v1.GetWorkflowStepsRequest
-	12, // 16: dbosui.v1.WorkflowService.GetWorkflowEvents:input_type -> dbosui.v1.GetWorkflowEventsRequest
-	14, // 17: dbosui.v1.WorkflowService.GetStats:input_type -> dbosui.v1.GetStatsRequest
-	17, // 18: dbosui.v1.WorkflowService.ListQueueStats:input_type -> dbosui.v1.ListQueueStatsRequest
-	20, // 19: dbosui.v1.WorkflowService.ListNotifications:input_type -> dbosui.v1.ListNotificationsRequest
-	28, // 20: dbosui.v1.WorkflowService.ListDistinctValues:input_type -> dbosui.v1.ListDistinctValuesRequest
-	22, // 21: dbosui.v1.WorkflowService.CancelWorkflow:input_type -> dbosui.v1.CancelWorkflowRequest
-	24, // 22: dbosui.v1.WorkflowService.ResumeWorkflow:input_type -> dbosui.v1.ResumeWorkflowRequest
-	26, // 23: dbosui.v1.WorkflowService.DeleteWorkflow:input_type -> dbosui.v1.DeleteWorkflowRequest
-	7,  // 24: dbosui.v1.WorkflowService.ListWorkflows:output_type -> dbosui.v1.ListWorkflowsResponse
-	9,  // 25: dbosui.v1.WorkflowService.GetWorkflow:output_type -> dbosui.v1.GetWorkflowResponse
-	11, // 26: dbosui.v1.WorkflowService.GetWorkflowSteps:output_type -> dbosui.v1.GetWorkflowStepsResponse
-	13, // 27: dbosui.v1.WorkflowService.GetWorkflowEvents:output_type -> dbosui.v1.GetWorkflowEventsResponse
-	15, // 28: dbosui.v1.WorkflowService.GetStats:output_type -> dbosui.v1.GetStatsResponse
-	18, // 29: dbosui.v1.WorkflowService.ListQueueStats:output_type -> dbosui.v1.ListQueueStatsResponse
-	21, // 30: dbosui.v1.WorkflowService.ListNotifications:output_type -> dbosui.v1.ListNotificationsResponse
-	29, // 31: dbosui.v1.WorkflowService.ListDistinctValues:output_type -> dbosui.v1.ListDistinctValuesResponse
-	23, // 32: dbosui.v1.WorkflowService.CancelWorkflow:output_type -> dbosui.v1.CancelWorkflowResponse
-	25, // 33: dbosui.v1.WorkflowService.ResumeWorkflow:output_type -> dbosui.v1.ResumeWorkflowResponse
-	27, // 34: dbosui.v1.WorkflowService.DeleteWorkflow:output_type -> dbosui.v1.DeleteWorkflowResponse
-	24, // [24:35] is the sub-list for method output_type
-	13, // [13:24] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	30, // 4: dbosui.v1.ListWorkflowsRequest.created_after:type_name -> google.protobuf.Timestamp
+	30, // 5: dbosui.v1.ListWorkflowsRequest.created_before:type_name -> google.protobuf.Timestamp
+	2,  // 6: dbosui.v1.ListWorkflowsResponse.workflows:type_name -> dbosui.v1.Workflow
+	2,  // 7: dbosui.v1.GetWorkflowResponse.workflow:type_name -> dbosui.v1.Workflow
+	3,  // 8: dbosui.v1.GetWorkflowStepsResponse.steps:type_name -> dbosui.v1.Step
+	4,  // 9: dbosui.v1.GetWorkflowEventsResponse.events:type_name -> dbosui.v1.Event
+	5,  // 10: dbosui.v1.GetStatsResponse.stats:type_name -> dbosui.v1.Stats
+	16, // 11: dbosui.v1.ListQueueStatsResponse.queues:type_name -> dbosui.v1.QueueStats
+	30, // 12: dbosui.v1.Notification.created_at:type_name -> google.protobuf.Timestamp
+	19, // 13: dbosui.v1.ListNotificationsResponse.notifications:type_name -> dbosui.v1.Notification
+	1,  // 14: dbosui.v1.ListDistinctValuesRequest.field:type_name -> dbosui.v1.WorkflowField
+	6,  // 15: dbosui.v1.WorkflowService.ListWorkflows:input_type -> dbosui.v1.ListWorkflowsRequest
+	8,  // 16: dbosui.v1.WorkflowService.GetWorkflow:input_type -> dbosui.v1.GetWorkflowRequest
+	10, // 17: dbosui.v1.WorkflowService.GetWorkflowSteps:input_type -> dbosui.v1.GetWorkflowStepsRequest
+	12, // 18: dbosui.v1.WorkflowService.GetWorkflowEvents:input_type -> dbosui.v1.GetWorkflowEventsRequest
+	14, // 19: dbosui.v1.WorkflowService.GetStats:input_type -> dbosui.v1.GetStatsRequest
+	17, // 20: dbosui.v1.WorkflowService.ListQueueStats:input_type -> dbosui.v1.ListQueueStatsRequest
+	20, // 21: dbosui.v1.WorkflowService.ListNotifications:input_type -> dbosui.v1.ListNotificationsRequest
+	28, // 22: dbosui.v1.WorkflowService.ListDistinctValues:input_type -> dbosui.v1.ListDistinctValuesRequest
+	22, // 23: dbosui.v1.WorkflowService.CancelWorkflow:input_type -> dbosui.v1.CancelWorkflowRequest
+	24, // 24: dbosui.v1.WorkflowService.ResumeWorkflow:input_type -> dbosui.v1.ResumeWorkflowRequest
+	26, // 25: dbosui.v1.WorkflowService.DeleteWorkflow:input_type -> dbosui.v1.DeleteWorkflowRequest
+	7,  // 26: dbosui.v1.WorkflowService.ListWorkflows:output_type -> dbosui.v1.ListWorkflowsResponse
+	9,  // 27: dbosui.v1.WorkflowService.GetWorkflow:output_type -> dbosui.v1.GetWorkflowResponse
+	11, // 28: dbosui.v1.WorkflowService.GetWorkflowSteps:output_type -> dbosui.v1.GetWorkflowStepsResponse
+	13, // 29: dbosui.v1.WorkflowService.GetWorkflowEvents:output_type -> dbosui.v1.GetWorkflowEventsResponse
+	15, // 30: dbosui.v1.WorkflowService.GetStats:output_type -> dbosui.v1.GetStatsResponse
+	18, // 31: dbosui.v1.WorkflowService.ListQueueStats:output_type -> dbosui.v1.ListQueueStatsResponse
+	21, // 32: dbosui.v1.WorkflowService.ListNotifications:output_type -> dbosui.v1.ListNotificationsResponse
+	29, // 33: dbosui.v1.WorkflowService.ListDistinctValues:output_type -> dbosui.v1.ListDistinctValuesResponse
+	23, // 34: dbosui.v1.WorkflowService.CancelWorkflow:output_type -> dbosui.v1.CancelWorkflowResponse
+	25, // 35: dbosui.v1.WorkflowService.ResumeWorkflow:output_type -> dbosui.v1.ResumeWorkflowResponse
+	27, // 36: dbosui.v1.WorkflowService.DeleteWorkflow:output_type -> dbosui.v1.DeleteWorkflowResponse
+	26, // [26:37] is the sub-list for method output_type
+	15, // [15:26] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_dbosui_v1_workflows_proto_init() }

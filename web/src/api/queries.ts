@@ -1,3 +1,4 @@
+import { timestampFromDate } from '@bufbuild/protobuf/wkt';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { notifications } from '@mantine/notifications';
 
@@ -11,14 +12,21 @@ export type ListParams = {
   executorId: string;
   applicationVersion: string;
   user: string;
+  idPrefix: string;
+  createdAfter: Date | null;
+  createdBefore: Date | null;
   limit: number;
   offset: number;
   sortDesc: boolean;
+  refetchIntervalMs?: number;
 };
 
 export function useWorkflows(params: ListParams) {
   return useQuery({
-    queryKey: ['workflows', params],
+    queryKey: [
+      'workflows',
+      { ...params, refetchIntervalMs: undefined }, // refetch interval isn't part of the cache key
+    ],
     queryFn: () =>
       workflowClient.listWorkflows({
         statuses: params.statuses,
@@ -27,11 +35,19 @@ export function useWorkflows(params: ListParams) {
         executorId: params.executorId,
         applicationVersion: params.applicationVersion,
         user: params.user,
+        idPrefix: params.idPrefix,
+        createdAfter: params.createdAfter
+          ? timestampFromDate(params.createdAfter)
+          : undefined,
+        createdBefore: params.createdBefore
+          ? timestampFromDate(params.createdBefore)
+          : undefined,
         limit: params.limit,
         offset: params.offset,
         sortDesc: params.sortDesc,
       }),
     placeholderData: (prev) => prev,
+    refetchInterval: params.refetchIntervalMs ?? false,
   });
 }
 

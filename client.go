@@ -71,6 +71,10 @@ type ListFilter struct {
 	QueueName          string
 	ExecutorID         string
 	ApplicationVersion string
+	// CreatedAfter / CreatedBefore are inclusive bounds on created_at. Zero
+	// time means unbounded.
+	CreatedAfter  time.Time
+	CreatedBefore time.Time
 }
 
 // DistinctField identifies a column on workflow_status that can be enumerated
@@ -250,6 +254,12 @@ func (m *mockClient) ListWorkflows(_ context.Context, filter ListFilter) (*ListR
 			continue
 		}
 		if filter.ApplicationVersion != "" && wf.ApplicationVersion != filter.ApplicationVersion {
+			continue
+		}
+		if !filter.CreatedAfter.IsZero() && wf.CreatedAt.Before(filter.CreatedAfter) {
+			continue
+		}
+		if !filter.CreatedBefore.IsZero() && wf.CreatedAt.After(filter.CreatedBefore) {
 			continue
 		}
 		filtered = append(filtered, wf)

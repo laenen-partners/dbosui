@@ -66,6 +66,10 @@ message ListWorkflowsRequest {
   string queue_name = 8;
   string executor_id = 9;
   string application_version = 10;
+  // Inclusive lower bound on created_at.
+  google.protobuf.Timestamp created_after = 11;
+  // Inclusive upper bound on created_at.
+  google.protobuf.Timestamp created_before = 12;
 }
 
 message ListWorkflowsResponse {
