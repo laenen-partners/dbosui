@@ -61,6 +61,7 @@ run = "air -c .air.db.toml"
 
 [tasks.dev]
 description = "Live-reload: Vite HMR + Go API (mock data)"
+shell = "bash -c"
 run = """
 set -euo pipefail
 trap 'kill 0' EXIT INT TERM
@@ -71,6 +72,7 @@ wait
 
 [tasks."dev:db"]
 description = "Live-reload: Vite HMR + Go API against DBOS_POSTGRES_URL / DATABASE_URL"
+shell = "bash -c"
 run = """
 set -euo pipefail
 trap 'kill 0' EXIT INT TERM
@@ -126,6 +128,8 @@ run = [
 [tasks."release:dist"]
 description = "Cross-compile release binaries into dist/ (with SPA embedded)"
 depends = ["web:build"]
+# Use bash explicitly; mise's default `sh` lacks `set -o pipefail`.
+shell = "bash -c"
 run = """
 set -euo pipefail
 mkdir -p dist
